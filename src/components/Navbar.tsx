@@ -54,7 +54,9 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {user?.user_metadata?.full_name || user?.email}
+                </span>
                 <Button variant="outline" onClick={handleLogout}>
                   Logout
                 </Button>
@@ -97,7 +99,9 @@ export const Navbar = () => {
             <div className="border-t pt-2 mt-2 px-4 space-y-2">
               {isAuthenticated ? (
                 <>
-                  <p className="text-sm text-muted-foreground py-2">Welcome, {user?.name}</p>
+                  <p className="text-sm text-muted-foreground py-2">
+                    Welcome, {user?.user_metadata?.full_name || user?.email}
+                  </p>
                   <Button variant="outline" onClick={handleLogout} className="w-full">
                     Logout
                   </Button>

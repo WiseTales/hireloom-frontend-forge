@@ -5,6 +5,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'admin' | 'job_seeker' | 'recruiter'>('job_seeker');
   const [loading, setLoading] = useState(false);
 
   // Redirect if already authenticated
@@ -40,11 +43,11 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await register(email, password, name);
+      await register(email, password, name, role);
       toast.success('Account created successfully!');
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -113,6 +116,26 @@ const Register = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-3">
+              I am a...
+            </label>
+            <RadioGroup value={role} onValueChange={(value: any) => setRole(value)}>
+              <div className="flex items-center space-x-2 mb-2">
+                <RadioGroupItem value="job_seeker" id="job_seeker" />
+                <Label htmlFor="job_seeker" className="font-normal cursor-pointer">Job Seeker</Label>
+              </div>
+              <div className="flex items-center space-x-2 mb-2">
+                <RadioGroupItem value="recruiter" id="recruiter" />
+                <Label htmlFor="recruiter" className="font-normal cursor-pointer">Recruiter</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="admin" id="admin" />
+                <Label htmlFor="admin" className="font-normal cursor-pointer">Admin</Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
