@@ -3,14 +3,34 @@ import { mockJobs } from '@/data/mockJobs';
 import { JobCategory } from '@/types/job';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import RecruiterDashboard from '@/components/RecruiterDashboard';
+import AdminDashboard from '@/components/AdminDashboard';
 
 const Dashboard = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userRole, loading } = useAuth();
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !loading) {
     return <Navigate to="/login" replace />;
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen gradient-subtle flex items-center justify-center">
+        <p className="text-lg text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  // Role-based dashboard rendering
+  if (userRole === 'recruiter') {
+    return <RecruiterDashboard />;
+  }
+
+  if (userRole === 'admin') {
+    return <AdminDashboard />;
+  }
+
+  // Default: Job Seeker Dashboard
   const categories: JobCategory[] = ['IT/Tech', 'Sales/Marketing', 'Finance', 'Healthcare', 'Engineering', 'Design'];
 
   return (

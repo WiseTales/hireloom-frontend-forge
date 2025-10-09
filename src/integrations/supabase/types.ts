@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      jobs: {
+        Row: {
+          category: string
+          company: string
+          created_at: string
+          description: string
+          id: string
+          location: string
+          posted_by: string
+          salary: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          company: string
+          created_at?: string
+          description: string
+          id?: string
+          location: string
+          posted_by: string
+          salary?: string | null
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company?: string
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          posted_by?: string
+          salary?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

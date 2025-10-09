@@ -2,11 +2,66 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Briefcase, Users, Building2, TrendingUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { mockJobs } from '@/data/mockJobs';
+import { JobCard } from '@/components/JobCard';
+import { supabase } from '@/integrations/supabase/client';
 
 const Landing = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [displayedJobs, setDisplayedJobs] = useState(mockJobs.slice(0, 12));
+  const [liveSearchResults, setLiveSearchResults] = useState<typeof mockJobs>([]);
+  const [showLiveResults, setShowLiveResults] = useState(false);
+  const [allJobs, setAllJobs] = useState(mockJobs);
+
+  useEffect(() => {
+    // Fetch real jobs from database and combine with mock jobs
+    const fetchJobs = async () => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        const dbJobs = data.map(job => ({
+          id: job.id,
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          salary: job.salary || 'Not specified',
+          type: job.type,
+          category: job.category,
+          description: job.description,
+          requirements: [],
+          posted: new Date(job.created_at).toLocaleDateString(),
+          isRemote: job.location.toLowerCase().includes('remote')
+        }));
+        setAllJobs([...dbJobs, ...mockJobs]);
+        setDisplayedJobs([...dbJobs, ...mockJobs].slice(0, 12));
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase();
+      const filtered = allJobs.filter((job) =>
+        job.title.toLowerCase().includes(searchLower) ||
+        job.company.toLowerCase().includes(searchLower) ||
+        job.location.toLowerCase().includes(searchLower) ||
+        job.category.toLowerCase().includes(searchLower) ||
+        job.description.toLowerCase().includes(searchLower)
+      );
+      setLiveSearchResults(filtered);
+      setShowLiveResults(true);
+    } else {
+      setShowLiveResults(false);
+      setLiveSearchResults([]);
+    }
+  }, [searchQuery, allJobs]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +83,7 @@ const Landing = () => {
           </p>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="max-w-3xl mx-auto">
+          <form onSubmit={handleSearch} className="max-w-3xl mx-auto relative">
             <div className="flex flex-col md:flex-row gap-3 bg-background p-2 rounded-xl shadow-elevated">
               <div className="flex-1 flex items-center gap-2 px-4">
                 <Search className="h-5 w-5 text-muted-foreground" />
@@ -44,6 +99,35 @@ const Landing = () => {
                 Search Jobs
               </Button>
             </div>
+
+            {/* Live Search Results */}
+            {showLiveResults && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-background rounded-xl shadow-elevated border max-h-[600px] overflow-y-auto z-50">
+                <div className="p-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {liveSearchResults.length} {liveSearchResults.length === 1 ? 'job' : 'jobs'} found
+                  </p>
+                  {liveSearchResults.length > 0 ? (
+                    <div className="grid gap-4">
+                      {liveSearchResults.slice(0, 6).map((job) => (
+                        <JobCard key={job.id} job={job} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center py-8 text-muted-foreground">
+                      No jobs found matching "{searchQuery}"
+                    </p>
+                  )}
+                  {liveSearchResults.length > 6 && (
+                    <div className="mt-4 text-center">
+                      <Button onClick={() => navigate(`/search?q=${encodeURIComponent(searchQuery)}`)}>
+                        View All {liveSearchResults.length} Results
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </form>
 
           <div className="mt-8 flex flex-wrap justify-center gap-4">
@@ -61,8 +145,29 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Featured Jobs Section */}
       <section className="py-20 px-4 gradient-subtle">
+        <div className="container mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Featured Opportunities
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {displayedJobs.map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))}
+          </div>
+          <div className="text-center">
+            <Link to="/register">
+              <Button size="lg">
+                View All Jobs
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Why Choose HireLoom?
@@ -112,7 +217,7 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 gradient-subtle">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Start Your Journey?
