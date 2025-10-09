@@ -42,46 +42,68 @@ const AdminDashboard = () => {
   const fetchAdminData = async () => {
     setLoading(true);
 
-    // Fetch all recruiters
-    const { data: recruiterRoles } = await supabase
-      .from('user_roles')
-      .select('user_id, profiles:user_id(id, full_name, email)')
-      .eq('role', 'recruiter');
+    try {
+      // Fetch all recruiters with their profiles
+      const { data: recruiterRoles, error: recruitersError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'recruiter');
 
-    // Fetch all jobs
-    const { data: allJobs } = await supabase
-      .from('jobs')
-      .select('*')
-      .order('created_at', { ascending: false });
+      if (recruitersError) {
+        console.error('Error fetching recruiters:', recruitersError);
+      }
 
-    // Fetch stats
-    const { data: jobSeekers } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'job_seeker');
+      // Fetch all jobs
+      const { data: allJobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (recruiterRoles && allJobs) {
-      // Group jobs by recruiter
-      const recruitersWithJobs: RecruiterWithJobs[] = recruiterRoles.map((role: any) => {
-        const recruiter = role.profiles;
-        const recruiterJobs = allJobs.filter(job => job.posted_by === recruiter.id);
-        
-        return {
-          recruiter: {
-            id: recruiter.id,
-            full_name: recruiter.full_name || recruiter.email,
-            email: recruiter.email
-          },
-          jobs: recruiterJobs
-        };
-      });
+      if (jobsError) {
+        console.error('Error fetching jobs:', jobsError);
+      }
 
-      setRecruitersData(recruitersWithJobs);
-      setStats({
-        totalRecruiters: recruitersWithJobs.length,
-        totalJobs: allJobs.length,
-        totalJobSeekers: jobSeekers?.length || 0
-      });
+      // Fetch stats
+      const { data: jobSeekers } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'job_seeker');
+
+      if (recruiterRoles && allJobs) {
+        // Fetch profiles for all recruiters
+        const recruiterIds = recruiterRoles.map(r => r.user_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', recruiterIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+
+        // Group jobs by recruiter
+        const recruitersWithJobs: RecruiterWithJobs[] = (profiles || []).map((profile) => {
+          const recruiterJobs = allJobs.filter(job => job.posted_by === profile.id);
+          
+          return {
+            recruiter: {
+              id: profile.id,
+              full_name: profile.full_name || profile.email,
+              email: profile.email
+            },
+            jobs: recruiterJobs
+          };
+        });
+
+        setRecruitersData(recruitersWithJobs);
+        setStats({
+          totalRecruiters: recruitersWithJobs.length,
+          totalJobs: allJobs.length,
+          totalJobSeekers: jobSeekers?.length || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error in fetchAdminData:', error);
     }
 
     setLoading(false);
