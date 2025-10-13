@@ -20,7 +20,15 @@ interface Job {
   salary: string;
   type: string;
   category: string;
+  employee_range: string;
   created_at: string;
+}
+
+interface JobApplication {
+  id: string;
+  applicant_name: string;
+  applicant_email: string;
+  applied_at: string;
 }
 
 const RecruiterDashboard = () => {
@@ -38,8 +46,12 @@ const RecruiterDashboard = () => {
     location: '',
     salary: '',
     type: 'Full-time',
-    category: 'IT/Tech'
+    category: 'IT/Tech',
+    employee_range: '1-10'
   });
+  
+  const [selectedJobApplications, setSelectedJobApplications] = useState<JobApplication[]>([]);
+  const [showingApplicationsFor, setShowingApplicationsFor] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -84,7 +96,8 @@ const RecruiterDashboard = () => {
           location: formData.location,
           salary: formData.salary,
           type: formData.type,
-          category: formData.category
+          category: formData.category,
+          employee_range: formData.employee_range
         })
         .eq('id', editingJob.id);
 
@@ -162,8 +175,28 @@ const RecruiterDashboard = () => {
       location: job.location,
       salary: job.salary || '',
       type: job.type,
-      category: job.category
+      category: job.category,
+      employee_range: job.employee_range || '1-10'
     });
+  };
+
+  const fetchApplicationsForJob = async (jobId: string) => {
+    const { data, error } = await supabase
+      .from('job_applications')
+      .select('*')
+      .eq('job_id', jobId)
+      .order('applied_at', { ascending: false });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch applications',
+        variant: 'destructive'
+      });
+    } else {
+      setSelectedJobApplications(data || []);
+      setShowingApplicationsFor(jobId);
+    }
   };
 
   const resetForm = () => {
@@ -175,7 +208,8 @@ const RecruiterDashboard = () => {
       location: '',
       salary: '',
       type: 'Full-time',
-      category: 'IT/Tech'
+      category: 'IT/Tech',
+      employee_range: '1-10'
     });
   };
 
@@ -275,6 +309,23 @@ const RecruiterDashboard = () => {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="employee_range">Company Size *</Label>
+                      <Select value={formData.employee_range} onValueChange={(value) => setFormData({ ...formData, employee_range: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1-10">1-10 employees</SelectItem>
+                          <SelectItem value="11-50">11-50 employees</SelectItem>
+                          <SelectItem value="51-200">51-200 employees</SelectItem>
+                          <SelectItem value="201-500">201-500 employees</SelectItem>
+                          <SelectItem value="501-1000">501-1000 employees</SelectItem>
+                          <SelectItem value="1000+">1000+ employees</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -349,11 +400,42 @@ const RecruiterDashboard = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         {job.salary && `Salary: ${job.salary} • `}
                         Category: {job.category}
+                        {job.employee_range && ` • Company Size: ${job.employee_range}`}
                       </p>
                       <p className="text-sm line-clamp-3">{job.description}</p>
                       <p className="text-xs text-muted-foreground mt-4">
                         Posted: {new Date(job.created_at).toLocaleDateString()}
                       </p>
+                      <div className="mt-4">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => fetchApplicationsForJob(job.id)}
+                        >
+                          View Applications
+                        </Button>
+                      </div>
+                      
+                      {showingApplicationsFor === job.id && (
+                        <div className="mt-4 pt-4 border-t">
+                          <h4 className="font-semibold mb-3">Applications ({selectedJobApplications.length})</h4>
+                          {selectedJobApplications.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No applications yet</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {selectedJobApplications.map((app) => (
+                                <div key={app.id} className="p-3 bg-muted rounded-lg">
+                                  <p className="font-medium text-sm">{app.applicant_name}</p>
+                                  <p className="text-sm text-muted-foreground">{app.applicant_email}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Applied: {new Date(app.applied_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))

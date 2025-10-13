@@ -14,12 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      job_applications: {
+        Row: {
+          applicant_email: string
+          applicant_name: string
+          applied_at: string
+          id: string
+          job_id: string
+          user_id: string
+        }
+        Insert: {
+          applicant_email: string
+          applicant_name: string
+          applied_at?: string
+          id?: string
+          job_id: string
+          user_id: string
+        }
+        Update: {
+          applicant_email?: string
+          applicant_name?: string
+          applied_at?: string
+          id?: string
+          job_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           category: string
           company: string
           created_at: string
           description: string
+          employee_range: string | null
           id: string
           location: string
           posted_by: string
@@ -33,6 +69,7 @@ export type Database = {
           company: string
           created_at?: string
           description: string
+          employee_range?: string | null
           id?: string
           location: string
           posted_by: string
@@ -46,6 +83,7 @@ export type Database = {
           company?: string
           created_at?: string
           description?: string
+          employee_range?: string | null
           id?: string
           location?: string
           posted_by?: string
