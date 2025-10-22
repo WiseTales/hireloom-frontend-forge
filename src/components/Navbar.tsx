@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, Search, Bookmark, Briefcase, X } from 'lucide-react';
+import { Menu, Search, Bookmark, Briefcase, X, Users } from 'lucide-react';
 import { useState } from 'react';
 
 export const Navbar = () => {
@@ -17,6 +17,7 @@ export const Navbar = () => {
 
   const navItems = isAuthenticated ? [
     { label: 'Search Jobs', href: '/dashboard', icon: Search },
+    { label: 'Feed', href: '/feed', icon: Users },
     { label: 'Saved Jobs', href: '/saved', icon: Bookmark },
     { label: 'Applied Jobs', href: '/applied', icon: Briefcase },
   ] : [];

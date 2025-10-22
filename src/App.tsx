@@ -11,6 +11,9 @@ import Dashboard from "./pages/Dashboard";
 import SearchResults from "./pages/SearchResults";
 import SavedJobs from "./pages/SavedJobs";
 import AppliedJobs from "./pages/AppliedJobs";
+import Feed from "./pages/Feed";
+import NetworkSearch from "./pages/NetworkSearch";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +35,9 @@ const App = () => (
               <Route path="/search" element={<SearchResults />} />
               <Route path="/saved" element={<SavedJobs />} />
               <Route path="/applied" element={<AppliedJobs />} />
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/network-search" element={<NetworkSearch />} />
+              <Route path="/profile/:userId?" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

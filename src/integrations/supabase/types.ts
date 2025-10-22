@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      connections: {
+        Row: {
+          created_at: string | null
+          id: string
+          recipient_id: string
+          requester_id: string
+          status: Database["public"]["Enums"]["connection_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          recipient_id: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["connection_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          recipient_id?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["connection_status"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string | null
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string | null
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          member_count: number | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_count?: number | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_count?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           applicant_email: string
@@ -94,6 +174,65 @@ export type Database = {
         }
         Relationships: []
       }
+      post_reactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          reaction_type: Database["public"]["Enums"]["reaction_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          reaction_type: Database["public"]["Enums"]["reaction_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          reaction_type?: Database["public"]["Enums"]["reaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -154,6 +293,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "job_seeker" | "recruiter"
+      connection_status: "pending" | "accepted" | "rejected"
+      reaction_type: "like" | "celebrate" | "support" | "insightful" | "love"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -282,6 +423,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "job_seeker", "recruiter"],
+      connection_status: ["pending", "accepted", "rejected"],
+      reaction_type: ["like", "celebrate", "support", "insightful", "love"],
     },
   },
 } as const
