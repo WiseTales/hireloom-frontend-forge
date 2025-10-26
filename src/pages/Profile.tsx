@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MapPin, Building2, Mail, Calendar, Users, Briefcase } from 'lucide-react';
+import ResumeUpload from '@/components/ResumeUpload';
 
 const Profile = () => {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
@@ -15,8 +16,10 @@ const Profile = () => {
   const [stats, setStats] = useState({ connections: 0, posts: 0 });
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
 
   const profileUserId = userId || user?.id;
+  const isOwnProfile = user?.id === profileUserId;
 
   useEffect(() => {
     if (profileUserId) {
@@ -34,7 +37,10 @@ const Profile = () => {
       .eq('id', profileUserId)
       .single();
     
-    if (profileData) setProfile(profileData);
+    if (profileData) {
+      setProfile(profileData);
+      setResumeUrl(profileData.resume_url);
+    }
 
     // Fetch stats
     const [connectionsRes, postsRes] = await Promise.all([
@@ -91,8 +97,6 @@ const Profile = () => {
     .map((n: string) => n[0])
     .join('')
     .toUpperCase() || profile.email?.[0]?.toUpperCase() || 'U';
-
-  const isOwnProfile = user?.id === profileUserId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,6 +180,15 @@ const Profile = () => {
                 </p>
               </CardContent>
             </Card>
+            
+            {isOwnProfile && (
+              <div className="mt-4">
+                <ResumeUpload 
+                  resumeUrl={resumeUrl} 
+                  onUploadSuccess={(url) => setResumeUrl(url)} 
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="posts">
