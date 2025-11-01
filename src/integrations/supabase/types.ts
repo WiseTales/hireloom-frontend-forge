@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      certifications: {
+        Row: {
+          created_at: string | null
+          credential_id: string | null
+          credential_url: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string
+          issuing_organization: string
+          name: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credential_id?: string | null
+          credential_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date: string
+          issuing_organization: string
+          name: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credential_id?: string | null
+          credential_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string
+          issuing_organization?: string
+          name?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connections: {
         Row: {
           created_at: string | null
@@ -341,6 +385,35 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_skills: {
+        Row: {
+          created_at: string | null
+          id: string
+          profile_id: string
+          skill_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          profile_id: string
+          skill_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          profile_id?: string
+          skill_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_skills_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_views: {
         Row: {
           id: string
@@ -404,6 +477,98 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string | null
+          description: string
+          end_date: string | null
+          id: string
+          image_url: string | null
+          profile_id: string
+          start_date: string
+          technologies: string[] | null
+          title: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          profile_id: string
+          start_date: string
+          technologies?: string[] | null
+          title: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          profile_id?: string
+          start_date?: string
+          technologies?: string[] | null
+          title?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendations: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          recipient_id: string
+          recommender_id: string
+          relationship: string
+          status: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          recipient_id: string
+          recommender_id: string
+          relationship: string
+          status?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          recipient_id?: string
+          recommender_id?: string
+          relationship?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendations_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendations_recommender_id_fkey"
+            columns: ["recommender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_jobs: {
         Row: {
           id: string
@@ -429,6 +594,42 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_endorsements: {
+        Row: {
+          endorsed_at: string | null
+          endorser_id: string
+          id: string
+          skill_id: string
+        }
+        Insert: {
+          endorsed_at?: string | null
+          endorser_id: string
+          id?: string
+          skill_id: string
+        }
+        Update: {
+          endorsed_at?: string | null
+          endorser_id?: string
+          id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_endorsements_endorser_id_fkey"
+            columns: ["endorser_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_endorsements_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "profile_skills"
             referencedColumns: ["id"]
           },
         ]

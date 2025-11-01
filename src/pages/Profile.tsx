@@ -9,6 +9,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MapPin, Building2, Mail, Calendar, Users, Briefcase } from 'lucide-react';
 import ResumeUpload from '@/components/ResumeUpload';
 import { ProfileViews } from '@/components/ProfileViews';
+import { Skills } from '@/components/profile/Skills';
+import { Recommendations } from '@/components/profile/Recommendations';
+import { Certifications } from '@/components/profile/Certifications';
+import { Projects } from '@/components/profile/Projects';
 
 const Profile = () => {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
@@ -164,12 +168,13 @@ const Profile = () => {
 
         {/* Tabbed Content */}
         <Tabs defaultValue="about" className="space-y-6">
-          <TabsList className="w-full justify-start">
+          <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="about">About</TabsTrigger>
             <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="experience">Experience</TabsTrigger>
-            <TabsTrigger value="education">Education</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
+            <TabsTrigger value="certifications">Certifications</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           </TabsList>
 
           <TabsContent value="about">
@@ -220,34 +225,20 @@ const Profile = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="experience">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Briefcase className="h-5 w-5" />
-                  Experience
-                </h3>
-                <p className="text-muted-foreground">No experience added yet</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="education">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4">Education</h3>
-                <p className="text-muted-foreground">No education added yet</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="skills">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4">Skills</h3>
-                <p className="text-muted-foreground">No skills added yet</p>
-              </CardContent>
-            </Card>
+            <Skills profileId={profileUserId!} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+
+          <TabsContent value="certifications">
+            <Certifications profileId={profileUserId!} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+
+          <TabsContent value="projects">
+            <Projects profileId={profileUserId!} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+
+          <TabsContent value="recommendations">
+            <Recommendations profileId={profileUserId!} isOwnProfile={isOwnProfile} />
           </TabsContent>
         </Tabs>
       </div>
