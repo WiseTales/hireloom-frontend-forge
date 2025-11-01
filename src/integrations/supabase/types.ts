@@ -101,6 +101,7 @@ export type Database = {
           applied_at: string
           id: string
           job_id: string
+          status: Database["public"]["Enums"]["application_status"] | null
           user_id: string
         }
         Insert: {
@@ -109,6 +110,7 @@ export type Database = {
           applied_at?: string
           id?: string
           job_id: string
+          status?: Database["public"]["Enums"]["application_status"] | null
           user_id: string
         }
         Update: {
@@ -117,6 +119,7 @@ export type Database = {
           applied_at?: string
           id?: string
           job_id?: string
+          status?: Database["public"]["Enums"]["application_status"] | null
           user_id?: string
         }
         Relationships: [
@@ -204,6 +207,81 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          link: string | null
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      post_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          post_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          post_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_reactions: {
         Row: {
           created_at: string | null
@@ -263,6 +341,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_views: {
+        Row: {
+          id: string
+          profile_id: string
+          viewed_at: string | null
+          viewer_id: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          viewed_at?: string | null
+          viewer_id: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          viewed_at?: string | null
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_views_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -289,6 +403,35 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      saved_jobs: {
+        Row: {
+          id: string
+          job_id: string
+          saved_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          saved_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          saved_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_jobs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -326,6 +469,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "job_seeker" | "recruiter"
+      application_status:
+        | "applied"
+        | "under_review"
+        | "shortlisted"
+        | "rejected"
       connection_status: "pending" | "accepted" | "rejected"
       reaction_type: "like" | "celebrate" | "support" | "insightful" | "love"
     }
@@ -456,6 +604,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "job_seeker", "recruiter"],
+      application_status: [
+        "applied",
+        "under_review",
+        "shortlisted",
+        "rejected",
+      ],
       connection_status: ["pending", "accepted", "rejected"],
       reaction_type: ["like", "celebrate", "support", "insightful", "love"],
     },

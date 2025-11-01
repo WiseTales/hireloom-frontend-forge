@@ -6,6 +6,7 @@ import { ThumbsUp, Heart, Lightbulb, Award, MessageCircle, Share2, MoreHorizonta
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { PostComments } from './PostComments';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -162,11 +163,6 @@ export const Post = ({ post, onUpdate }: PostProps) => {
         </div>
 
         <div className="flex items-center gap-2 border-t pt-2">
-          <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Comment
-          </Button>
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground">
@@ -187,6 +183,8 @@ export const Post = ({ post, onUpdate }: PostProps) => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        <PostComments postId={post.id} />
       </CardContent>
     </Card>
   );

@@ -15,6 +15,7 @@ import Feed from "./pages/Feed";
 import NetworkSearch from "./pages/NetworkSearch";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/network-search" element={<NetworkSearch />} />
             <Route path="/profile/:userId?" element={<Profile />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

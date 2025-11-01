@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { createNotification } from '@/hooks/useNotifications';
 
 const JobSeekerDashboard = () => {
   const { user } = useAuth();
@@ -54,6 +55,9 @@ const JobSeekerDashboard = () => {
       .eq('id', user.id)
       .single();
 
+    // Get job details
+    const job = jobs.find(j => j.id === jobId);
+
     const { error } = await supabase
       .from('job_applications')
       .insert([{
@@ -78,6 +82,15 @@ const JobSeekerDashboard = () => {
         });
       }
     } else {
+      // Create notification for successful application
+      await createNotification({
+        userId: user.id,
+        type: 'job_application',
+        title: 'Application Submitted',
+        message: `Your application for ${job?.title} at ${job?.company} has been submitted successfully.`,
+        link: '/applied',
+      });
+
       toast({
         title: 'Success',
         description: 'Successfully applied to job!'

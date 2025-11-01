@@ -1,23 +1,53 @@
-import { JobCard } from '@/components/JobCard';
-import { mockJobs } from '@/data/mockJobs';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const AppliedJobs = () => {
-  const { isAuthenticated } = useAuth();
-  const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
+  const { isAuthenticated, user } = useAuth();
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const applied = JSON.parse(localStorage.getItem('hireloom_applied_jobs') || '[]');
-    setAppliedJobIds(applied);
-  }, []);
+    if (user) {
+      fetchApplications();
+    }
+  }, [user]);
+
+  const fetchApplications = async () => {
+    const { data, error } = await supabase
+      .from('job_applications')
+      .select('*, jobs(*)')
+      .eq('user_id', user?.id)
+      .order('applied_at', { ascending: false });
+
+    if (data) {
+      setApplications(data);
+    }
+    setLoading(false);
+  };
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  const appliedJobs = mockJobs.filter((job) => appliedJobIds.includes(job.id));
+  const getStatusColor = (status: string) => {
+    const colors = {
+      applied: 'bg-blue-500',
+      under_review: 'bg-yellow-500',
+      shortlisted: 'bg-green-500',
+      rejected: 'bg-red-500',
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-500';
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
 
   return (
     <div className="min-h-screen gradient-subtle">
@@ -27,10 +57,34 @@ const AppliedJobs = () => {
           <p className="text-muted-foreground">Track your job applications</p>
         </div>
 
-        {appliedJobs.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading applications...</p>
+          </div>
+        ) : applications.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {appliedJobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+            {applications.map((app) => (
+              <Card key={app.id} className="p-6 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-bold text-xl mb-1">{app.jobs?.title}</h3>
+                    <p className="text-muted-foreground">{app.jobs?.company}</p>
+                  </div>
+                  <Badge className={getStatusColor(app.status)}>
+                    {getStatusLabel(app.status)}
+                  </Badge>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <p><span className="font-medium">Location:</span> {app.jobs?.location}</p>
+                  <p><span className="font-medium">Type:</span> {app.jobs?.type}</p>
+                  {app.jobs?.salary && (
+                    <p><span className="font-medium">Salary:</span> {app.jobs.salary}</p>
+                  )}
+                  <p className="text-muted-foreground">
+                    Applied {new Date(app.applied_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </Card>
             ))}
           </div>
         ) : (

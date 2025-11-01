@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProfileCard } from '@/components/feed/ProfileCard';
 import { PostCreator } from '@/components/feed/PostCreator';
 import { Post } from '@/components/feed/Post';
+import { PostComments } from '@/components/feed/PostComments';
 import { Recommendations } from '@/components/feed/Recommendations';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 

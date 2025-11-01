@@ -6,25 +6,35 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { createNotification } from '@/hooks/useNotifications';
 
 interface JobCardProps {
   job: Job;
 }
 
 export const JobCard = ({ job }: JobCardProps) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(false);
   const [isApplied, setIsApplied] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const savedJobs = JSON.parse(localStorage.getItem('hireloom_saved_jobs') || '[]');
-      const appliedJobs = JSON.parse(localStorage.getItem('hireloom_applied_jobs') || '[]');
-      setIsSaved(savedJobs.includes(job.id));
-      setIsApplied(appliedJobs.includes(job.id));
+    if (user) {
+      checkSavedStatus();
     }
-  }, [isAuthenticated, job.id]);
+  }, [user, job.id]);
+
+  const checkSavedStatus = async () => {
+    const { data: saved } = await supabase
+      .from('saved_jobs')
+      .select('id')
+      .eq('user_id', user?.id)
+      .eq('job_id', job.id)
+      .single();
+    
+    setIsSaved(!!saved);
+  };
 
   const handleApply = () => {
     if (!isAuthenticated) {
@@ -41,21 +51,33 @@ export const JobCard = ({ job }: JobCardProps) => {
     }
   };
 
-  const handleSave = () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: '/dashboard' } });
+  const handleSave = async () => {
+    if (!user) {
+      navigate('/login');
       return;
     }
 
-    const savedJobs = JSON.parse(localStorage.getItem('hireloom_saved_jobs') || '[]');
     if (isSaved) {
-      const updated = savedJobs.filter((id: string) => id !== job.id);
-      localStorage.setItem('hireloom_saved_jobs', JSON.stringify(updated));
+      await supabase
+        .from('saved_jobs')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('job_id', job.id);
       setIsSaved(false);
       toast.success('Job removed from saved');
     } else {
-      savedJobs.push(job.id);
-      localStorage.setItem('hireloom_saved_jobs', JSON.stringify(savedJobs));
+      await supabase
+        .from('saved_jobs')
+        .insert({ user_id: user.id, job_id: job.id });
+      
+      await createNotification({
+        userId: user.id,
+        type: 'job_saved',
+        title: 'Job Saved',
+        message: `You saved ${job.title} at ${job.company}`,
+        link: '/saved',
+      });
+      
       setIsSaved(true);
       toast.success('Job saved successfully!');
     }

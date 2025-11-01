@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MapPin, Building2, Mail, Calendar, Users, Briefcase } from 'lucide-react';
 import ResumeUpload from '@/components/ResumeUpload';
+import { ProfileViews } from '@/components/ProfileViews';
 
 const Profile = () => {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
@@ -182,12 +183,17 @@ const Profile = () => {
             </Card>
             
             {isOwnProfile && (
-              <div className="mt-4">
-                <ResumeUpload 
-                  resumeUrl={resumeUrl} 
-                  onUploadSuccess={(url) => setResumeUrl(url)} 
-                />
-              </div>
+              <>
+                <div className="mt-4">
+                  <ResumeUpload 
+                    resumeUrl={resumeUrl} 
+                    onUploadSuccess={(url) => setResumeUrl(url)} 
+                  />
+                </div>
+                <div className="mt-4">
+                  <ProfileViews />
+                </div>
+              </>
             )}
           </TabsContent>
 

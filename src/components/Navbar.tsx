@@ -1,13 +1,53 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+      subscribeToNotifications();
+    }
+  }, [user]);
+
+  const fetchUnreadCount = async () => {
+    const { count } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user?.id)
+      .eq('read', false);
+
+    setUnreadCount(count || 0);
+  };
+
+  const subscribeToNotifications = () => {
+    const channel = supabase
+      .channel('navbar-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user?.id}`,
+        },
+        () => fetchUnreadCount()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   const handleLogout = () => {
     logout();
@@ -54,6 +94,23 @@ export const Navbar = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="relative"
+              >
+                <Link to="/notifications">
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+            )}
             {isAuthenticated ? (
               <>
                 <span className="text-sm text-muted-foreground">
