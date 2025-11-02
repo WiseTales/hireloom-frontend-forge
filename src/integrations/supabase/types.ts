@@ -58,6 +58,74 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          company_size: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          industry: string | null
+          location: string | null
+          logo_url: string | null
+          name: string
+          website: string | null
+        }
+        Insert: {
+          company_size?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          logo_url?: string | null
+          name: string
+          website?: string | null
+        }
+        Update: {
+          company_size?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          logo_url?: string | null
+          name?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      company_followers: {
+        Row: {
+          company_id: string
+          followed_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          followed_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          followed_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_followers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connections: {
         Row: {
           created_at: string | null
@@ -138,6 +206,39 @@ export type Database = {
         }
         Relationships: []
       }
+      job_alerts: {
+        Row: {
+          created_at: string | null
+          experience_level: string | null
+          id: string
+          is_remote: boolean | null
+          job_type: string | null
+          keywords: string[] | null
+          location: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          experience_level?: string | null
+          id?: string
+          is_remote?: boolean | null
+          job_type?: string | null
+          keywords?: string[] | null
+          location?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          experience_level?: string | null
+          id?: string
+          is_remote?: boolean | null
+          job_type?: string | null
+          keywords?: string[] | null
+          location?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           applicant_email: string
@@ -180,13 +281,17 @@ export type Database = {
         Row: {
           category: string
           company: string
+          company_id: string | null
           created_at: string
           description: string
           employee_range: string | null
+          experience_level: string | null
           id: string
+          is_remote: boolean | null
           location: string
           posted_by: string
           salary: string | null
+          skills_required: string[] | null
           title: string
           type: string
           updated_at: string
@@ -194,13 +299,17 @@ export type Database = {
         Insert: {
           category: string
           company: string
+          company_id?: string | null
           created_at?: string
           description: string
           employee_range?: string | null
+          experience_level?: string | null
           id?: string
+          is_remote?: boolean | null
           location: string
           posted_by: string
           salary?: string | null
+          skills_required?: string[] | null
           title: string
           type: string
           updated_at?: string
@@ -208,18 +317,30 @@ export type Database = {
         Update: {
           category?: string
           company?: string
+          company_id?: string | null
           created_at?: string
           description?: string
           employee_range?: string | null
+          experience_level?: string | null
           id?: string
+          is_remote?: boolean | null
           location?: string
           posted_by?: string
           salary?: string | null
+          skills_required?: string[] | null
           title?: string
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -283,6 +404,73 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      poll_votes: {
+        Row: {
+          id: string
+          option_index: number
+          poll_id: string
+          user_id: string
+          voted_at: string | null
+        }
+        Insert: {
+          id?: string
+          option_index: number
+          poll_id: string
+          user_id: string
+          voted_at?: string | null
+        }
+        Update: {
+          id?: string
+          option_index?: number
+          poll_id?: string
+          user_id?: string
+          voted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          created_at: string | null
+          ends_at: string | null
+          id: string
+          options: Json
+          post_id: string
+          question: string
+        }
+        Insert: {
+          created_at?: string | null
+          ends_at?: string | null
+          id?: string
+          options: Json
+          post_id: string
+          question: string
+        }
+        Update: {
+          created_at?: string | null
+          ends_at?: string | null
+          id?: string
+          options?: Json
+          post_id?: string
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polls_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       post_comments: {
         Row: {
@@ -362,28 +550,45 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          document_url: string | null
           id: string
           image_url: string | null
+          shared_post_id: string | null
           updated_at: string | null
           user_id: string
+          video_url: string | null
         }
         Insert: {
           content: string
           created_at?: string | null
+          document_url?: string | null
           id?: string
           image_url?: string | null
+          shared_post_id?: string | null
           updated_at?: string | null
           user_id: string
+          video_url?: string | null
         }
         Update: {
           content?: string
           created_at?: string | null
+          document_url?: string | null
           id?: string
           image_url?: string | null
+          shared_post_id?: string | null
           updated_at?: string | null
           user_id?: string
+          video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "posts_shared_post_id_fkey"
+            columns: ["shared_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profile_skills: {
         Row: {

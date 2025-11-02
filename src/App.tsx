@@ -16,6 +16,7 @@ import NetworkSearch from "./pages/NetworkSearch";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
+import Company from "./pages/Company";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/profile/:userId?" element={<Profile />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/company/:id" element={<Company />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
