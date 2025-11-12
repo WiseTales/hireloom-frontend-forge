@@ -22,6 +22,9 @@ const NetworkSearch = () => {
   const [location, setLocation] = useState('');
   const [salaryRange, setSalaryRange] = useState('');
   const [datePosted, setDatePosted] = useState('');
+  const [skills, setSkills] = useState('');
+  const [experienceLevel, setExperienceLevel] = useState('');
+  const [industry, setIndustry] = useState('');
 
   // Results
   const [jobs, setJobs] = useState<any[]>([]);
@@ -33,7 +36,7 @@ const NetworkSearch = () => {
     if (query) {
       performSearch();
     }
-  }, [query, activeTab, location, salaryRange, datePosted]);
+  }, [query, activeTab, location, salaryRange, datePosted, skills, experienceLevel, industry]);
 
   const performSearch = async () => {
     setLoadingResults(true);
@@ -55,27 +58,51 @@ const NetworkSearch = () => {
         jobQuery = jobQuery.gte('created_at', date.toISOString());
       }
 
+      if (experienceLevel) {
+        jobQuery = jobQuery.eq('experience_level', experienceLevel);
+      }
+
+      if (skills) {
+        const skillArray = skills.split(',').map(s => s.trim());
+        jobQuery = jobQuery.overlaps('skills_required', skillArray);
+      }
+
       const { data } = await jobQuery.order('created_at', { ascending: false });
       if (data) setJobs(data);
     } else if (activeTab === 'people') {
-      const { data } = await supabase
+      let peopleQuery = supabase
         .from('profiles')
-        .select('*')
-        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .select('*, profile_skills(skill_name)')
         .limit(20);
+
+      if (query) {
+        peopleQuery = peopleQuery.or(`full_name.ilike.%${query}%,email.ilike.%${query}%`);
+      }
+
+      const { data } = await peopleQuery;
       
       if (data) setPeople(data);
     } else if (activeTab === 'companies') {
-      const { data } = await supabase
-        .from('jobs')
-        .select('company')
-        .ilike('company', `%${query}%`)
+      let companyQuery = supabase
+        .from('companies')
+        .select('*')
         .limit(20);
-      
-      if (data) {
-        const uniqueCompanies = [...new Set(data.map(j => j.company))];
-        setCompanies(uniqueCompanies.map(c => ({ name: c })));
+
+      if (query) {
+        companyQuery = companyQuery.or(`name.ilike.%${query}%,industry.ilike.%${query}%`);
       }
+
+      if (industry) {
+        companyQuery = companyQuery.ilike('industry', `%${industry}%`);
+      }
+
+      if (location) {
+        companyQuery = companyQuery.ilike('location', `%${location}%`);
+      }
+
+      const { data } = await companyQuery;
+      
+      if (data) setCompanies(data);
     }
 
     setLoadingResults(false);
@@ -174,6 +201,33 @@ const NetworkSearch = () => {
                         </Select>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label htmlFor="experience">Experience Level</Label>
+                        <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+                          <SelectTrigger id="experience">
+                            <SelectValue placeholder="Any level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="entry">Entry Level</SelectItem>
+                            <SelectItem value="mid">Mid Level</SelectItem>
+                            <SelectItem value="senior">Senior Level</SelectItem>
+                            <SelectItem value="lead">Lead</SelectItem>
+                            <SelectItem value="executive">Executive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="skills">Skills</Label>
+                        <Input
+                          id="skills"
+                          placeholder="e.g. React, Python, AWS"
+                          value={skills}
+                          onChange={(e) => setSkills(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">Separate with commas</p>
+                      </div>
+
                       <Button
                         variant="outline"
                         className="w-full"
@@ -181,10 +235,48 @@ const NetworkSearch = () => {
                           setLocation('');
                           setSalaryRange('');
                           setDatePosted('');
+                          setSkills('');
+                          setExperienceLevel('');
                         }}
                       >
                         Clear Filters
                       </Button>
+                    </>
+                  )}
+
+                  {activeTab === 'people' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="people-skills">Skills</Label>
+                      <Input
+                        id="people-skills"
+                        placeholder="e.g. React, Python, Design"
+                        value={skills}
+                        onChange={(e) => setSkills(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  {activeTab === 'companies' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="company-industry">Industry</Label>
+                        <Input
+                          id="company-industry"
+                          placeholder="e.g. Technology, Finance"
+                          value={industry}
+                          onChange={(e) => setIndustry(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="company-location">Location</Label>
+                        <Input
+                          id="company-location"
+                          placeholder="City or country"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                        />
+                      </div>
                     </>
                   )}
                 </CardContent>
@@ -276,8 +368,8 @@ const NetworkSearch = () => {
 
               <TabsContent value="companies" className="mt-0">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {companies.map((company: any, index) => (
-                    <Card key={index}>
+                  {companies.map((company: any) => (
+                    <Card key={company.id}>
                       <CardContent className="pt-6">
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -285,12 +377,20 @@ const NetworkSearch = () => {
                           </div>
                           <div className="flex-1">
                             <h3 className="font-semibold">{company.name}</h3>
-                            <p className="text-sm text-muted-foreground">Company</p>
+                            <p className="text-sm text-muted-foreground">{company.industry || 'Company'}</p>
                           </div>
                         </div>
-                        <Button variant="outline" className="w-full mt-4">
-                          View Jobs
-                        </Button>
+                        <div className="mt-4 space-y-2">
+                          {company.location && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {company.location}
+                            </p>
+                          )}
+                          <Button variant="outline" className="w-full">
+                            View Company
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}

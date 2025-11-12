@@ -1,13 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare, Bell } from 'lucide-react';
+import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare, Bell, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 
 export const Navbar = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, userRole } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -58,9 +58,11 @@ export const Navbar = () => {
   const navItems = isAuthenticated ? [
     { label: 'Search Jobs', href: '/dashboard', icon: Search },
     { label: 'Feed', href: '/feed', icon: Users },
+    { label: 'Groups', href: '/groups', icon: Users },
     { label: 'Messages', href: '/messages', icon: MessageSquare },
     { label: 'Saved Jobs', href: '/saved', icon: Bookmark },
     { label: 'Applied Jobs', href: '/applied', icon: Briefcase },
+    ...(userRole === 'admin' ? [{ label: 'Moderation', href: '/moderation', icon: Shield }] : []),
   ] : [];
 
   return (

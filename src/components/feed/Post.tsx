@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ThumbsUp, Heart, Lightbulb, Award, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { ThumbsUp, Heart, Lightbulb, Award, MessageCircle, Share2, MoreHorizontal, Flag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { PostComments } from './PostComments';
+import { ReportDialog } from './ReportDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,9 +109,25 @@ export const Post = ({ post, onUpdate }: PostProps) => {
               <p className="text-xs text-muted-foreground">{timeAgo(post.created_at)}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-5 w-5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <ReportDialog
+                contentType="post"
+                contentId={post.id}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Flag className="h-4 w-4 mr-2" />
+                    Report post
+                  </DropdownMenuItem>
+                }
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
 

@@ -13,6 +13,9 @@ import SavedJobs from "./pages/SavedJobs";
 import AppliedJobs from "./pages/AppliedJobs";
 import Feed from "./pages/Feed";
 import NetworkSearch from "./pages/NetworkSearch";
+import Groups from "./pages/Groups";
+import GroupDetail from "./pages/GroupDetail";
+import Moderation from "./pages/Moderation";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
@@ -40,6 +43,9 @@ const App = () => (
               <Route path="/applied" element={<AppliedJobs />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/network-search" element={<NetworkSearch />} />
+            <Route path="/groups" element={<Groups />} />
+            <Route path="/groups/:id" element={<GroupDetail />} />
+            <Route path="/moderation" element={<Moderation />} />
             <Route path="/profile/:userId?" element={<Profile />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />
