@@ -74,7 +74,7 @@ const GroupDetail = () => {
         .from('group_posts')
         .select(`
           *,
-          profiles:user_id (
+          profiles (
             full_name,
             email
           )
