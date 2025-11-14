@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare, Bell, Shield } from 'lucide-react';
+import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare, Bell, Shield, Calendar, FileText, BarChart, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -59,9 +59,12 @@ export const Navbar = () => {
     { label: 'Search Jobs', href: '/dashboard', icon: Search },
     { label: 'Feed', href: '/feed', icon: Users },
     { label: 'Groups', href: '/groups', icon: Users },
+    { label: 'Events', href: '/events', icon: Calendar },
+    { label: 'Articles', href: '/articles', icon: FileText },
     { label: 'Messages', href: '/messages', icon: MessageSquare },
     { label: 'Saved Jobs', href: '/saved', icon: Bookmark },
     { label: 'Applied Jobs', href: '/applied', icon: Briefcase },
+    { label: 'Analytics', href: '/analytics', icon: BarChart },
     ...(userRole === 'admin' ? [{ label: 'Moderation', href: '/moderation', icon: Shield }] : []),
   ] : [];
 
@@ -118,6 +121,11 @@ export const Navbar = () => {
                 <span className="text-sm text-muted-foreground">
                   Welcome, {user?.user_metadata?.full_name || user?.email}
                 </span>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to="/settings">
+                    <Settings className="h-5 w-5" />
+                  </Link>
+                </Button>
                 <Button variant="outline" onClick={handleLogout}>
                   Logout
                 </Button>
@@ -163,6 +171,12 @@ export const Navbar = () => {
                   <p className="text-sm text-muted-foreground py-2">
                     Welcome, {user?.user_metadata?.full_name || user?.email}
                   </p>
+                  <Button variant="ghost" asChild className="w-full">
+                    <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </Link>
+                  </Button>
                   <Button variant="outline" onClick={handleLogout} className="w-full">
                     Logout
                   </Button>

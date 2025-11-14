@@ -16,6 +16,12 @@ import NetworkSearch from "./pages/NetworkSearch";
 import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
 import Moderation from "./pages/Moderation";
+import Events from "./pages/Events";
+import Articles from "./pages/Articles";
+import ArticleEditor from "./pages/ArticleEditor";
+import ArticleView from "./pages/ArticleView";
+import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
@@ -46,6 +52,13 @@ const App = () => (
             <Route path="/groups" element={<Groups />} />
             <Route path="/groups/:id" element={<GroupDetail />} />
             <Route path="/moderation" element={<Moderation />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/articles" element={<Articles />} />
+            <Route path="/article/new" element={<ArticleEditor />} />
+            <Route path="/article/:id/edit" element={<ArticleEditor />} />
+            <Route path="/article/:id" element={<ArticleView />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/profile/:userId?" element={<Profile />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />
