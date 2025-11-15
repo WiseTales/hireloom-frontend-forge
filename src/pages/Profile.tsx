@@ -13,6 +13,9 @@ import { Skills } from '@/components/profile/Skills';
 import { Recommendations } from '@/components/profile/Recommendations';
 import { Certifications } from '@/components/profile/Certifications';
 import { Projects } from '@/components/profile/Projects';
+import { Experience } from '@/components/profile/Experience';
+import { Education } from '@/components/profile/Education';
+import { ConnectionSuggestions } from '@/components/ConnectionSuggestions';
 
 const Profile = () => {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
@@ -170,11 +173,13 @@ const Profile = () => {
         <Tabs defaultValue="about" className="space-y-6">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="about">About</TabsTrigger>
-            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="experience">Experience</TabsTrigger>
+            <TabsTrigger value="education">Education</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
-            <TabsTrigger value="certifications">Certifications</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="certifications">Certifications</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+            <TabsTrigger value="posts">Posts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="about">
@@ -198,8 +203,19 @@ const Profile = () => {
                 <div className="mt-4">
                   <ProfileViews />
                 </div>
+                <div className="mt-4">
+                  <ConnectionSuggestions />
+                </div>
               </>
             )}
+          </TabsContent>
+
+          <TabsContent value="experience">
+            <Experience profileId={profileUserId!} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+
+          <TabsContent value="education">
+            <Education profileId={profileUserId!} isOwnProfile={isOwnProfile} />
           </TabsContent>
 
           <TabsContent value="posts">

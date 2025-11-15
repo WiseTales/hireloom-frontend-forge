@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
+import { AdvancedFilters } from '@/components/jobs/AdvancedFilters';
 
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,8 +33,16 @@ const SearchResults = () => {
   return (
     <div className="min-h-screen gradient-subtle">
       <div className="container mx-auto px-4 py-8">
-        {/* Search Bar */}
-        <div className="mb-8">
+        <div className="grid lg:grid-cols-4 gap-6">
+          {/* Filters Sidebar */}
+          <div className="lg:col-span-1">
+            <AdvancedFilters onFilterChange={(filters) => console.log(filters)} />
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Search Bar */}
+            <div className="mb-8">
           <form onSubmit={handleSearch} className="max-w-2xl">
             <div className="flex gap-2">
               <div className="flex-1 flex items-center gap-2 px-4 bg-background border rounded-lg">
@@ -75,6 +84,8 @@ const SearchResults = () => {
             <p className="text-muted-foreground">Try adjusting your search terms or browse all jobs</p>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );

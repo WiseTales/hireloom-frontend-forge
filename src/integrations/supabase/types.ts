@@ -221,6 +221,50 @@ export type Database = {
         }
         Relationships: []
       }
+      education: {
+        Row: {
+          created_at: string
+          degree: string
+          description: string | null
+          end_date: string | null
+          field_of_study: string | null
+          id: string
+          profile_id: string
+          school: string
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          degree: string
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          id?: string
+          profile_id: string
+          school: string
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          degree?: string
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          id?: string
+          profile_id?: string
+          school?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_rsvps: {
         Row: {
           event_id: string
@@ -1269,6 +1313,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      work_experience: {
+        Row: {
+          company: string
+          created_at: string
+          currently_working: boolean
+          description: string | null
+          end_date: string | null
+          id: string
+          location: string | null
+          profile_id: string
+          start_date: string
+          title: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          currently_working?: boolean
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          profile_id: string
+          start_date: string
+          title: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          currently_working?: boolean
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          profile_id?: string
+          start_date?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_experience_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
