@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          author_id: string
+          content: string
+          cover_image_url: string | null
+          created_at: string | null
+          id: string
+          published: boolean | null
+          subtitle: string | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          id?: string
+          published?: boolean | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          id?: string
+          published?: boolean | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocked_users: {
         Row: {
           blocked_id: string
@@ -174,6 +221,101 @@ export type Database = {
         }
         Relationships: []
       }
+      event_rsvps: {
+        Row: {
+          event_id: string
+          id: string
+          rsvp_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          rsvp_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          rsvp_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_rsvps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string | null
+          description: string
+          end_time: string
+          event_type: string
+          event_url: string | null
+          id: string
+          image_url: string | null
+          location: string | null
+          max_attendees: number | null
+          organizer_id: string
+          start_time: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          end_time: string
+          event_type: string
+          event_url?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          max_attendees?: number | null
+          organizer_id: string
+          start_time: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          end_time?: string
+          event_type?: string
+          event_url?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          max_attendees?: number | null
+          organizer_id?: string
+          start_time?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string
@@ -239,6 +381,13 @@ export type Database = {
             referencedRelation: "groups"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "group_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       groups: {
@@ -262,6 +411,27 @@ export type Database = {
           id?: string
           member_count?: number | null
           name?: string
+        }
+        Relationships: []
+      }
+      hashtags: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          use_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          use_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          use_count?: number | null
         }
         Relationships: []
       }
@@ -431,6 +601,59 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          article_updates: boolean | null
+          comments: boolean | null
+          connection_requests: boolean | null
+          created_at: string | null
+          email_notifications: boolean | null
+          event_reminders: boolean | null
+          id: string
+          job_alerts: boolean | null
+          messages: boolean | null
+          post_reactions: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          article_updates?: boolean | null
+          comments?: boolean | null
+          connection_requests?: boolean | null
+          created_at?: string | null
+          email_notifications?: boolean | null
+          event_reminders?: boolean | null
+          id?: string
+          job_alerts?: boolean | null
+          messages?: boolean | null
+          post_reactions?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          article_updates?: boolean | null
+          comments?: boolean | null
+          connection_requests?: boolean | null
+          created_at?: string | null
+          email_notifications?: boolean | null
+          event_reminders?: boolean | null
+          id?: string
+          job_alerts?: boolean | null
+          messages?: boolean | null
+          post_reactions?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -573,6 +796,42 @@ export type Database = {
           },
         ]
       }
+      post_hashtags: {
+        Row: {
+          created_at: string | null
+          hashtag_id: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          hashtag_id: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string | null
+          hashtag_id?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_hashtags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_reactions: {
         Row: {
           created_at: string | null
@@ -645,6 +904,44 @@ export type Database = {
             columns: ["shared_post_id"]
             isOneToOne: false
             referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_analytics: {
+        Row: {
+          date: string
+          id: string
+          new_connections: number | null
+          post_engagements: number | null
+          post_impressions: number | null
+          profile_id: string
+          profile_views: number | null
+        }
+        Insert: {
+          date: string
+          id?: string
+          new_connections?: number | null
+          post_engagements?: number | null
+          post_impressions?: number | null
+          profile_id: string
+          profile_views?: number | null
+        }
+        Update: {
+          date?: string
+          id?: string
+          new_connections?: number | null
+          post_engagements?: number | null
+          post_impressions?: number | null
+          profile_id?: string
+          profile_views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_analytics_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -870,7 +1167,22 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_jobs: {
         Row: {
@@ -969,6 +1281,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_article_views: {
+        Args: { article_id: string }
+        Returns: undefined
       }
     }
     Enums: {
