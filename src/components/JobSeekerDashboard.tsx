@@ -6,6 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/hooks/useNotifications';
+import { ConnectionSuggestions } from '@/components/ConnectionSuggestions';
+import { ProfileViews } from '@/components/ProfileViews';
+import { JobAlerts } from '@/components/jobs/JobAlerts';
 
 const JobSeekerDashboard = () => {
   const { user } = useAuth();
@@ -112,18 +115,21 @@ const JobSeekerDashboard = () => {
   return (
     <div className="min-h-screen gradient-subtle">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Explore Opportunities</h1>
-          <p className="text-muted-foreground">Discover jobs that match your skills and interests</p>
-        </div>
+        <div className="grid lg:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <div className="mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Explore Opportunities</h1>
+              <p className="text-muted-foreground">Discover jobs that match your skills and interests</p>
+            </div>
 
-        {jobs.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">No jobs available at the moment.</p>
-            <p className="text-sm text-muted-foreground mt-2">Check back later for new opportunities!</p>
-          </div>
-        ) : (
-          categories.map((category) => {
+            {jobs.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-lg text-muted-foreground">No jobs available at the moment.</p>
+                <p className="text-sm text-muted-foreground mt-2">Check back later for new opportunities!</p>
+              </div>
+            ) : (
+              categories.map((category) => {
             const categoryJobs = jobs.filter((job) => job.category === category);
             
             if (categoryJobs.length === 0) return null;
@@ -163,6 +169,15 @@ const JobSeekerDashboard = () => {
             );
           })
         )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <ProfileViews />
+            <ConnectionSuggestions />
+            <JobAlerts />
+          </div>
+        </div>
       </div>
     </div>
   );
