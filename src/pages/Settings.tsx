@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Shield, Bell, User, Download, Trash2 } from "lucide-react";
 
 interface NotificationPreferences {
   email_notifications: boolean;
@@ -62,11 +65,7 @@ export default function Settings() {
         });
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -99,16 +98,9 @@ export default function Settings() {
         if (error) throw error;
       }
 
-      toast({
-        title: "Success",
-        description: "Notification preferences saved successfully",
-      });
+      toast.success("Notification preferences saved successfully");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     } finally {
       setSaving(false);
     }
@@ -118,18 +110,103 @@ export default function Settings() {
     return <div className="container mx-auto p-6">Loading settings...</div>;
   }
 
+  const [profile, setProfile] = useState<any>(null);
+
+  const fetchProfile = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user?.id)
+      .single();
+    if (data) setProfile(data);
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    <div className="container mx-auto p-6 max-w-4xl">
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>
-            Manage how you receive notifications
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <Tabs defaultValue="account" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="account">
+            <User className="h-4 w-4 mr-2" />
+            Account
+          </TabsTrigger>
+          <TabsTrigger value="privacy">
+            <Shield className="h-4 w-4 mr-2" />
+            Privacy
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="data">
+            <Download className="h-4 w-4 mr-2" />
+            Data
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="account">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Email</Label>
+                <Input value={profile?.email || ""} disabled />
+              </div>
+              <div>
+                <Label>Full Name</Label>
+                <Input value={profile?.full_name || ""} disabled />
+              </div>
+              <Button onClick={() => toast.info("Password change coming soon")}>
+                Change Password
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="privacy">
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacy Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Profile visible to everyone</Label>
+                <Switch defaultChecked />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Allow connection requests</Label>
+                <Switch defaultChecked />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Show profile in search</Label>
+                <Switch defaultChecked />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Allow messages from non-connections</Label>
+                <Switch />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Preferences</CardTitle>
+              <CardDescription>
+                Manage how you receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="email_notifications">Email Notifications</Label>
@@ -263,6 +340,38 @@ export default function Settings() {
           </Button>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="data">
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">Export Your Data</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Download a copy of all your data including posts, connections, and profile information.
+                </p>
+                <Button variant="outline" onClick={() => toast.info("Export will be emailed to you shortly")}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Request Data Export
+                </Button>
+              </div>
+              <div className="pt-4 border-t">
+                <h3 className="font-semibold mb-2 text-destructive">Delete Account</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <Button variant="destructive" onClick={() => toast.error("Account deletion coming soon")}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -16,6 +16,9 @@ import { Projects } from '@/components/profile/Projects';
 import { Experience } from '@/components/profile/Experience';
 import { Education } from '@/components/profile/Education';
 import { ConnectionSuggestions } from '@/components/ConnectionSuggestions';
+import { AboutSection } from '@/components/profile/AboutSection';
+import { CoverPhoto } from '@/components/profile/CoverPhoto';
+import { ProfileCompletion } from '@/components/profile/ProfileCompletion';
 
 const Profile = () => {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
@@ -25,6 +28,9 @@ const Profile = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [hasExperience, setHasExperience] = useState(false);
+  const [hasEducation, setHasEducation] = useState(false);
+  const [hasSkills, setHasSkills] = useState(false);
 
   const profileUserId = userId || user?.id;
   const isOwnProfile = user?.id === profileUserId;
@@ -32,8 +38,20 @@ const Profile = () => {
   useEffect(() => {
     if (profileUserId) {
       fetchProfile();
+      checkProfileCompletion();
     }
   }, [profileUserId]);
+
+  const checkProfileCompletion = async () => {
+    const [exp, edu, skills] = await Promise.all([
+      supabase.from("work_experience").select("id").eq("profile_id", profileUserId).limit(1),
+      supabase.from("education").select("id").eq("profile_id", profileUserId).limit(1),
+      supabase.from("profile_skills").select("id").eq("profile_id", profileUserId).limit(1),
+    ]);
+    setHasExperience((exp.data?.length || 0) > 0);
+    setHasEducation((edu.data?.length || 0) > 0);
+    setHasSkills((skills.data?.length || 0) > 0);
+  };
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -108,11 +126,17 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Cover Photo */}
+      <CoverPhoto 
+        profileId={profileUserId!}
+        coverPhotoUrl={profile?.cover_photo_url}
+        isOwnProfile={isOwnProfile}
+        onUpdate={fetchProfile}
+      />
       {/* Header Card */}
-      <Card className="border-b rounded-none">
-        <div className="h-32 gradient-hero" />
-        <CardContent className="relative pb-0">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-16">
+      <Card className="border-b rounded-none -mt-16 relative z-10">
+        <CardContent className="pb-0 pt-16">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
             <Avatar className="h-32 w-32 border-4 border-background">
               <AvatarFallback className="text-3xl font-semibold bg-primary text-primary-foreground">
                 {initials}
@@ -182,30 +206,29 @@ const Profile = () => {
             <TabsTrigger value="posts">Posts</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="about">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="font-semibold mb-4">About</h3>
-                <p className="text-muted-foreground">
-                  Professional user at HireLoom. Connect with me to explore opportunities and collaborate on projects.
-                </p>
-              </CardContent>
-            </Card>
+          <TabsContent value="about" className="space-y-4">
+            <AboutSection
+              profileId={profileUserId!}
+              bio={profile?.bio}
+              headline={profile?.headline}
+              isOwnProfile={isOwnProfile}
+              onUpdate={fetchProfile}
+            />
             
             {isOwnProfile && (
               <>
-                <div className="mt-4">
-                  <ResumeUpload 
-                    resumeUrl={resumeUrl} 
-                    onUploadSuccess={(url) => setResumeUrl(url)} 
-                  />
-                </div>
-                <div className="mt-4">
-                  <ProfileViews />
-                </div>
-                <div className="mt-4">
-                  <ConnectionSuggestions />
-                </div>
+                <ResumeUpload 
+                  resumeUrl={resumeUrl} 
+                  onUploadSuccess={(url) => setResumeUrl(url)} 
+                />
+                <ProfileCompletion
+                  profile={profile}
+                  hasExperience={hasExperience}
+                  hasEducation={hasEducation}
+                  hasSkills={hasSkills}
+                />
+                <ProfileViews />
+                <ConnectionSuggestions />
               </>
             )}
           </TabsContent>
