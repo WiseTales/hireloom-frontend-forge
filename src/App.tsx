@@ -17,6 +17,7 @@ import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
 import Moderation from "./pages/Moderation";
 import Events from "./pages/Events";
+import SearchGlobal from "./pages/SearchGlobal";
 import Articles from "./pages/Articles";
 import ArticleEditor from "./pages/ArticleEditor";
 import ArticleView from "./pages/ArticleView";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/applied" element={<AppliedJobs />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/network-search" element={<NetworkSearch />} />
+            <Route path="/search-global" element={<SearchGlobal />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/groups/:id" element={<GroupDetail />} />
             <Route path="/moderation" element={<Moderation />} />

@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      article_comments: {
+        Row: {
+          article_id: string
+          content: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       articles: {
         Row: {
           author_id: string
@@ -457,6 +492,35 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      hashtag_followers: {
+        Row: {
+          followed_at: string | null
+          hashtag_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          followed_at?: string | null
+          hashtag_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          followed_at?: string | null
+          hashtag_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hashtag_followers_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hashtags: {
         Row: {
@@ -1057,26 +1121,38 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
+          cover_photo_url: string | null
           created_at: string | null
           email: string
           full_name: string | null
+          headline: string | null
           id: string
+          profile_completion: number | null
           resume_url: string | null
           updated_at: string | null
         }
         Insert: {
+          bio?: string | null
+          cover_photo_url?: string | null
           created_at?: string | null
           email: string
           full_name?: string | null
+          headline?: string | null
           id: string
+          profile_completion?: number | null
           resume_url?: string | null
           updated_at?: string | null
         }
         Update: {
+          bio?: string | null
+          cover_photo_url?: string | null
           created_at?: string | null
           email?: string
           full_name?: string | null
+          headline?: string | null
           id?: string
+          profile_completion?: number | null
           resume_url?: string | null
           updated_at?: string | null
         }
@@ -1224,6 +1300,35 @@ export type Database = {
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_articles: {
+        Row: {
+          article_id: string
+          id: string
+          saved_at: string | null
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          id?: string
+          saved_at?: string | null
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          id?: string
+          saved_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_articles_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
             referencedColumns: ["id"]
           },
         ]

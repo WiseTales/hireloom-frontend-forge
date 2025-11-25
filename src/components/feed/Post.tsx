@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ThumbsUp, Heart, Lightbulb, Award, MessageCircle, Share2, MoreHorizontal, Flag } from 'lucide-react';
+import { PollDisplay } from './PollDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ export const Post = ({ post, onUpdate }: PostProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [reacting, setReacting] = useState(false);
+  const [poll, setPoll] = useState<any>(null);
 
   type ReactionType = 'like' | 'love' | 'insightful' | 'celebrate' | 'support';
 
@@ -86,6 +88,19 @@ export const Post = ({ post, onUpdate }: PostProps) => {
     .join('')
     .toUpperCase() || post.profiles?.email?.[0]?.toUpperCase() || 'U';
 
+  const fetchPoll = async () => {
+    const { data } = await supabase
+      .from("polls")
+      .select("*")
+      .eq("post_id", post.id)
+      .single();
+    if (data) setPoll(data);
+  };
+
+  useState(() => {
+    fetchPoll();
+  });
+
   const timeAgo = (date: string) => {
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     if (seconds < 60) return 'Just now';
@@ -141,6 +156,8 @@ export const Post = ({ post, onUpdate }: PostProps) => {
             className="rounded-lg w-full object-cover max-h-96"
           />
         )}
+
+        {poll && <PollDisplay postId={post.id} />}
 
         {post.post_reactions?.length > 0 && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">

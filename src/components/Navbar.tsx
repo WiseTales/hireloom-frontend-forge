@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare, Bell, Shield, Calendar, FileText, BarChart, Settings, UserPlus } from 'lucide-react';
+import { Menu, Search, Bookmark, Briefcase, X, Users, MessageSquare, Bell, Shield, Calendar, FileText, BarChart, Settings, UserPlus, SearchIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +63,7 @@ export const Navbar = () => {
     { label: 'Articles', href: '/articles', icon: FileText },
     { label: 'Messages', href: '/messages', icon: MessageSquare },
     { label: 'Network', href: '/network-search', icon: UserPlus },
+    { label: 'Global Search', href: '/search-global', icon: Search },
     { label: 'Saved Jobs', href: '/saved', icon: Bookmark },
     { label: 'Applied Jobs', href: '/applied', icon: Briefcase },
     { label: 'Analytics', href: '/analytics', icon: BarChart },
