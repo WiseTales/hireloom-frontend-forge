@@ -2,6 +2,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import RecruiterDashboard from '@/components/RecruiterDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
+import InterviewerDashboard from '@/components/InterviewerDashboard';
+import EmployeeDashboard from '@/components/EmployeeDashboard';
 import JobSeekerDashboard from '@/components/JobSeekerDashboard';
 
 const Dashboard = () => {
@@ -28,9 +30,16 @@ const Dashboard = () => {
     return <AdminDashboard />;
   }
 
-  // Default: Job Seeker Dashboard
+  if (userRole === 'interviewer') {
+    return <InterviewerDashboard />;
+  }
+
+  if (userRole === 'employee') {
+    return <EmployeeDashboard />;
+  }
+
+  // Default: Job Seeker Dashboard (legacy support)
   return <JobSeekerDashboard />;
 };
 
 export default Dashboard;
-

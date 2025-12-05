@@ -2,17 +2,19 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
-type UserRole = 'admin' | 'job_seeker' | 'recruiter';
+export type UserRole = 'admin' | 'job_seeker' | 'recruiter' | 'interviewer' | 'employee';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
+  hasPermission: (permission: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user role:', error);
@@ -102,7 +104,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error;
   };
 
+  const loginWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    
+    if (error) throw error;
+  };
+
   const register = async (email: string, password: string, name: string, role: UserRole) => {
+    // Prevent admin registration
+    if (role === 'admin') {
+      throw new Error('Admin registration is not allowed');
+    }
+    
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -133,16 +151,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('hireloom_applied_jobs');
   };
 
+  const hasPermission = async (permission: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      // Type assertion needed because RPC function accepts enum type
+      const { data, error } = await supabase.rpc('has_permission', {
+        _user_id: user.id,
+        _permission: permission as any
+      });
+      
+      if (error) {
+        console.error('Error checking permission:', error);
+        return false;
+      }
+      
+      return data ?? false;
+    } catch (error) {
+      console.error('Error checking permission:', error);
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       session,
       userRole,
       login, 
+      loginWithGoogle,
       register, 
       logout, 
       isAuthenticated: !!user,
-      loading
+      loading,
+      hasPermission
     }}>
       {children}
     </AuthContext.Provider>
