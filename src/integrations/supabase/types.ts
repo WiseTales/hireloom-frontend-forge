@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      applicants: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          email: string
+          id: string
+          job_id: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          referred_by: string | null
+          resume_url: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          email: string
+          id?: string
+          job_id?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          referred_by?: string | null
+          resume_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          email?: string
+          id?: string
+          job_id?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          referred_by?: string | null
+          resume_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applicants_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       article_comments: {
         Row: {
           article_id: string
@@ -542,6 +595,119 @@ export type Database = {
           use_count?: number | null
         }
         Relationships: []
+      }
+      interview_feedback: {
+        Row: {
+          communication_rating: number | null
+          culture_fit_rating: number | null
+          id: string
+          interview_id: string
+          interviewer_id: string
+          notes: string | null
+          overall_rating: number | null
+          recommendation: string | null
+          strengths: string | null
+          submitted_at: string | null
+          technical_rating: number | null
+          weaknesses: string | null
+        }
+        Insert: {
+          communication_rating?: number | null
+          culture_fit_rating?: number | null
+          id?: string
+          interview_id: string
+          interviewer_id: string
+          notes?: string | null
+          overall_rating?: number | null
+          recommendation?: string | null
+          strengths?: string | null
+          submitted_at?: string | null
+          technical_rating?: number | null
+          weaknesses?: string | null
+        }
+        Update: {
+          communication_rating?: number | null
+          culture_fit_rating?: number | null
+          id?: string
+          interview_id?: string
+          interviewer_id?: string
+          notes?: string | null
+          overall_rating?: number | null
+          recommendation?: string | null
+          strengths?: string | null
+          submitted_at?: string | null
+          technical_rating?: number | null
+          weaknesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_feedback_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interviews: {
+        Row: {
+          applicant_id: string
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          interview_type: string | null
+          interviewer_id: string
+          job_id: string
+          location: string | null
+          meeting_link: string | null
+          scheduled_at: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          applicant_id: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          interview_type?: string | null
+          interviewer_id: string
+          job_id: string
+          location?: string | null
+          meeting_link?: string | null
+          scheduled_at: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          applicant_id?: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          interview_type?: string | null
+          interviewer_id?: string
+          job_id?: string
+          location?: string | null
+          meeting_link?: string | null
+          scheduled_at?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interviews_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "applicants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_alerts: {
         Row: {
@@ -1250,6 +1416,53 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          candidate_email: string
+          candidate_name: string
+          candidate_phone: string | null
+          created_at: string | null
+          id: string
+          job_id: string
+          notes: string | null
+          referrer_id: string
+          relationship: string | null
+          status: string | null
+        }
+        Insert: {
+          candidate_email: string
+          candidate_name: string
+          candidate_phone?: string | null
+          created_at?: string | null
+          id?: string
+          job_id: string
+          notes?: string | null
+          referrer_id: string
+          relationship?: string | null
+          status?: string | null
+        }
+        Update: {
+          candidate_email?: string
+          candidate_name?: string
+          candidate_phone?: string | null
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          notes?: string | null
+          referrer_id?: string
+          relationship?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           created_at: string
@@ -1303,6 +1516,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission: Database["public"]["Enums"]["permission_type"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission: Database["public"]["Enums"]["permission_type"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["permission_type"]
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
       }
       saved_articles: {
         Row: {
@@ -1471,6 +1705,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_permission: {
+        Args: {
+          _permission: Database["public"]["Enums"]["permission_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1484,13 +1725,32 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "job_seeker" | "recruiter"
+      app_role:
+        | "admin"
+        | "job_seeker"
+        | "recruiter"
+        | "interviewer"
+        | "employee"
       application_status:
         | "applied"
         | "under_review"
         | "shortlisted"
         | "rejected"
       connection_status: "pending" | "accepted" | "rejected"
+      permission_type:
+        | "create_applicant_profile"
+        | "schedule_interview"
+        | "view_job_post"
+        | "edit_job_post"
+        | "remove_job_post"
+        | "review_interview_feedback"
+        | "submit_interview_feedback"
+        | "view_applicant_profile"
+        | "post_job"
+        | "manage_users"
+        | "refer_candidate"
+        | "view_all_interviews"
+        | "view_own_interviews"
       reaction_type: "like" | "celebrate" | "support" | "insightful" | "love"
     }
     CompositeTypes: {
@@ -1619,7 +1879,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "job_seeker", "recruiter"],
+      app_role: ["admin", "job_seeker", "recruiter", "interviewer", "employee"],
       application_status: [
         "applied",
         "under_review",
@@ -1627,6 +1887,21 @@ export const Constants = {
         "rejected",
       ],
       connection_status: ["pending", "accepted", "rejected"],
+      permission_type: [
+        "create_applicant_profile",
+        "schedule_interview",
+        "view_job_post",
+        "edit_job_post",
+        "remove_job_post",
+        "review_interview_feedback",
+        "submit_interview_feedback",
+        "view_applicant_profile",
+        "post_job",
+        "manage_users",
+        "refer_candidate",
+        "view_all_interviews",
+        "view_own_interviews",
+      ],
       reaction_type: ["like", "celebrate", "support", "insightful", "love"],
     },
   },
