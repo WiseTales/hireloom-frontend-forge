@@ -15,7 +15,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'job_seeker' | 'recruiter'>('job_seeker');
+  const [role, setRole] = useState<'job_seeker' | 'recruiter' | 'interviewer' | 'employee'>('employee');
   const [loading, setLoading] = useState(false);
 
   // Redirect if already authenticated
@@ -124,16 +124,20 @@ const Register = () => {
             </label>
             <RadioGroup value={role} onValueChange={(value: any) => setRole(value)}>
               <div className="flex items-center space-x-2 mb-2">
-                <RadioGroupItem value="job_seeker" id="job_seeker" />
-                <Label htmlFor="job_seeker" className="font-normal cursor-pointer">Job Seeker</Label>
+                <RadioGroupItem value="employee" id="employee" />
+                <Label htmlFor="employee" className="font-normal cursor-pointer">Employee</Label>
               </div>
               <div className="flex items-center space-x-2 mb-2">
                 <RadioGroupItem value="recruiter" id="recruiter" />
                 <Label htmlFor="recruiter" className="font-normal cursor-pointer">Recruiter</Label>
               </div>
+              <div className="flex items-center space-x-2 mb-2">
+                <RadioGroupItem value="interviewer" id="interviewer" />
+                <Label htmlFor="interviewer" className="font-normal cursor-pointer">Interviewer</Label>
+              </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="admin" id="admin" />
-                <Label htmlFor="admin" className="font-normal cursor-pointer">Admin</Label>
+                <RadioGroupItem value="job_seeker" id="job_seeker" />
+                <Label htmlFor="job_seeker" className="font-normal cursor-pointer">Job Seeker (External)</Label>
               </div>
             </RadioGroup>
           </div>
