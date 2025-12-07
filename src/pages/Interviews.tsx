@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Clock, User, Video, MapPin, ExternalLink } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { Navbar } from '@/components/Navbar';
 
 interface Interview {
   id: string;
@@ -29,21 +29,31 @@ interface Interview {
   } | null;
 }
 
+interface Feedback {
+  id: string;
+  interview_id: string;
+  submitted_at: string;
+  interview: Interview | null;
+}
+
 const Interviews = () => {
   const { user, userRole } = useAuth();
   const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [pendingFeedback, setPendingFeedback] = useState<Interview[]>([]);
+  const [completedFeedback, setCompletedFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchInterviews();
+      fetchData();
     }
   }, [user, userRole]);
 
-  const fetchInterviews = async () => {
+  const fetchData = async () => {
     if (!user) return;
     
     try {
+      // Fetch all interviews
       let query = supabase
         .from('interviews')
         .select(`
@@ -51,19 +61,60 @@ const Interviews = () => {
           applicant:applicants(id, name, email),
           job:jobs(id, title, company)
         `)
-        .order('scheduled_at', { ascending: true });
+        .order('scheduled_at', { ascending: false });
 
-      // If interviewer, only show their interviews
       if (userRole === 'interviewer') {
         query = query.eq('interviewer_id', user.id);
       }
 
-      const { data, error } = await query;
+      const { data: interviewsData, error: interviewsError } = await query;
+      if (interviewsError) throw interviewsError;
+      setInterviews(interviewsData || []);
 
-      if (error) throw error;
-      setInterviews(data || []);
+      // Fetch completed interviews needing feedback
+      const { data: completed, error: completedError } = await supabase
+        .from('interviews')
+        .select(`
+          *,
+          applicant:applicants(id, name, email),
+          job:jobs(id, title, company)
+        `)
+        .eq('interviewer_id', user.id)
+        .eq('status', 'completed')
+        .order('scheduled_at', { ascending: false });
+
+      if (completedError) throw completedError;
+
+      // Check which ones have feedback
+      const { data: feedbacks, error: feedbackError } = await supabase
+        .from('interview_feedback')
+        .select('interview_id')
+        .eq('interviewer_id', user.id);
+
+      if (feedbackError) throw feedbackError;
+
+      const feedbackInterviewIds = new Set(feedbacks?.map(f => f.interview_id) || []);
+      const pending = completed?.filter(i => !feedbackInterviewIds.has(i.id)) || [];
+      setPendingFeedback(pending);
+
+      // Fetch completed feedback
+      const { data: allFeedback, error: allFeedbackError } = await supabase
+        .from('interview_feedback')
+        .select(`
+          *,
+          interview:interviews(
+            *,
+            applicant:applicants(id, name, email),
+            job:jobs(id, title, company)
+          )
+        `)
+        .eq('interviewer_id', user.id)
+        .order('submitted_at', { ascending: false });
+
+      if (allFeedbackError) throw allFeedbackError;
+      setCompletedFeedback(allFeedback || []);
     } catch (error) {
-      console.error('Error fetching interviews:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -72,175 +123,141 @@ const Interviews = () => {
   const upcomingInterviews = interviews.filter(
     i => new Date(i.scheduled_at) >= new Date() && i.status === 'scheduled'
   );
-  
-  const completedInterviews = interviews.filter(
-    i => i.status === 'completed'
-  );
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'scheduled':
-        return <Badge className="bg-blue-500">Scheduled</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500">Completed</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">Cancelled</Badge>;
-      case 'no_show':
-        return <Badge variant="outline">No Show</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'phone':
-        return <Badge variant="outline">Phone</Badge>;
-      case 'video':
-        return <Badge variant="outline">Video</Badge>;
-      case 'panel':
-        return <Badge variant="outline">Panel</Badge>;
-      case 'technical':
-        return <Badge variant="outline">Technical</Badge>;
-      case 'hr':
-        return <Badge variant="outline">HR</Badge>;
-      default:
-        return <Badge variant="outline">{type}</Badge>;
-    }
-  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Interviews</h1>
-          <p className="text-muted-foreground">
-            {userRole === 'interviewer' ? 'Your scheduled interviews' : 'All scheduled interviews'}
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <div className="container mx-auto px-6 py-8 max-w-4xl">
+        <h1 className="text-3xl font-bold mb-8">Interviews</h1>
 
-      <Tabs defaultValue="upcoming">
-        <TabsList>
-          <TabsTrigger value="upcoming">
-            Upcoming <Badge variant="secondary" className="ml-2">{upcomingInterviews.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Completed <Badge variant="secondary" className="ml-2">{completedInterviews.length}</Badge>
-          </TabsTrigger>
-        </TabsList>
+        {/* Feedback to complete */}
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-4">Feedback to complete</h2>
+          {pendingFeedback.length === 0 ? (
+            <p className="text-muted-foreground">No unfinished interview feedback</p>
+          ) : (
+            <div className="space-y-3">
+              {pendingFeedback.map((interview) => (
+                <div 
+                  key={interview.id} 
+                  className="flex items-center justify-between py-3 border-b last:border-b-0"
+                >
+                  <div className="flex items-center gap-4">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32">
+                      {format(new Date(interview.scheduled_at), "MMM d h:mma")} IST
+                    </span>
+                    <div>
+                      <span className="font-medium">{interview.applicant?.name}</span>
+                      <span className="text-muted-foreground ml-2 text-sm">
+                        {interview.job?.title}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {interview.interview_type} Interview
+                    </span>
+                    <Link to={`/interview/${interview.id}/feedback`}>
+                      <Button variant="outline" size="sm">
+                        SUBMIT
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-        <TabsContent value="upcoming" className="mt-6">
+        {/* Upcoming interviews */}
+        <section className="mb-10">
+          <h2 className="text-xl font-semibold mb-4">Upcoming interviews</h2>
           {upcomingInterviews.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No upcoming interviews scheduled</p>
-              </CardContent>
-            </Card>
+            <p className="text-muted-foreground">Not scheduled for any upcoming interviews</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {upcomingInterviews.map((interview) => (
-                <Card key={interview.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(interview.scheduled_at), "EEEE, MMMM d 'at' h:mm a")}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            ({interview.duration_minutes} min)
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-semibold">{interview.applicant?.name}</h3>
-                        <p className="text-muted-foreground">
-                          {interview.job?.title} at {interview.job?.company}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {getTypeBadge(interview.interview_type)}
-                          {getStatusBadge(interview.status)}
-                        </div>
-                        {interview.meeting_link && (
-                          <a
-                            href={interview.meeting_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-primary hover:underline text-sm"
-                          >
-                            <Video className="h-4 w-4" />
-                            Join Meeting
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                        {interview.location && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            {interview.location}
-                          </div>
-                        )}
-                      </div>
-                      <Button variant="outline" size="sm">View Details</Button>
+                <div 
+                  key={interview.id} 
+                  className="flex items-center justify-between py-3 border-b last:border-b-0"
+                >
+                  <div className="flex items-center gap-4">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32">
+                      {format(new Date(interview.scheduled_at), "MMM d h:mma")} IST
+                    </span>
+                    <div>
+                      <span className="font-medium">{interview.applicant?.name}</span>
+                      <span className="text-muted-foreground ml-2 text-sm">
+                        {interview.job?.title}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {interview.interview_type} Interview
+                    </span>
+                    <Button variant="outline" size="sm">
+                      VIEW
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
-        </TabsContent>
+        </section>
 
-        <TabsContent value="completed" className="mt-6">
-          {completedInterviews.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No completed interviews yet</p>
-              </CardContent>
-            </Card>
+        {/* Recently completed feedback */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Recently completed feedback</h2>
+          {completedFeedback.length === 0 ? (
+            <p className="text-muted-foreground">No completed feedback yet</p>
           ) : (
-            <div className="space-y-4">
-              {completedInterviews.map((interview) => (
-                <Card key={interview.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(interview.scheduled_at), "MMMM d, yyyy 'at' h:mm a")}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-semibold">{interview.applicant?.name}</h3>
-                        <p className="text-muted-foreground">
-                          {interview.job?.title} at {interview.job?.company}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {getTypeBadge(interview.interview_type)}
-                          {getStatusBadge(interview.status)}
-                        </div>
-                      </div>
-                      <Link to={`/interview/${interview.id}/feedback`}>
-                        <Button size="sm">
-                          {userRole === 'interviewer' ? 'Submit Feedback' : 'View Feedback'}
-                        </Button>
-                      </Link>
+            <div className="space-y-3">
+              {completedFeedback.map((feedback) => (
+                <div 
+                  key={feedback.id} 
+                  className="flex items-center justify-between py-3 border-b last:border-b-0"
+                >
+                  <div className="flex items-center gap-4">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32">
+                      {format(new Date(feedback.submitted_at), "MMM d h:mma")} IST
+                    </span>
+                    <div>
+                      <span className="font-medium">{feedback.interview?.applicant?.name}</span>
+                      <span className="text-muted-foreground ml-2 text-sm">
+                        {feedback.interview?.job?.title}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {feedback.interview?.interview_type} Interview
+                    </span>
+                    <Button variant="outline" size="sm">
+                      VIEW
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </section>
+      </div>
     </div>
   );
 };
