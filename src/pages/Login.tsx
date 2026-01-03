@@ -170,6 +170,8 @@ const Login = () => {
         <div className="text-center space-y-2 text-xs text-muted-foreground pt-8">
           <a href="/jobs" className="hover:underline">View Open Positions</a>
           <span className="mx-2">·</span>
+          <a href="/signup" className="hover:underline">Create Company Account</a>
+          <span className="mx-2">·</span>
           <a href="#" className="hover:underline">Privacy Notice</a>
         </div>
       </div>

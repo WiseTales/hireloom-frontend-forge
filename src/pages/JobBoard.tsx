@@ -37,6 +37,8 @@ const JobBoard = () => {
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
+        .eq('visibility', 'external')
+        .eq('is_published', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
