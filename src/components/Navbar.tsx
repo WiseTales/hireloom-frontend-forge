@@ -56,17 +56,10 @@ export const Navbar = () => {
   };
 
   const navItems = isAuthenticated ? [
-    { label: 'Search Jobs', href: '/dashboard', icon: Search },
-    { label: 'Feed', href: '/feed', icon: Users },
-    { label: 'Groups', href: '/groups', icon: Users },
-    { label: 'Events', href: '/events', icon: Calendar },
-    { label: 'Articles', href: '/articles', icon: FileText },
+    { label: 'Dashboard', href: '/dashboard', icon: Briefcase },
+    { label: 'Interviews', href: '/interviews', icon: Calendar },
+    { label: 'Referrals', href: '/referrals', icon: UserPlus },
     { label: 'Messages', href: '/messages', icon: MessageSquare },
-    { label: 'Network', href: '/network-search', icon: UserPlus },
-    { label: 'Global Search', href: '/search-global', icon: Search },
-    { label: 'Saved Jobs', href: '/saved', icon: Bookmark },
-    { label: 'Applied Jobs', href: '/applied', icon: Briefcase },
-    { label: 'Analytics', href: '/analytics', icon: BarChart },
     ...(userRole === 'admin' ? [{ label: 'Moderation', href: '/moderation', icon: Shield }] : []),
   ] : [];
 
@@ -135,10 +128,10 @@ export const Navbar = () => {
             ) : (
               <>
                 <Button variant="ghost" asChild>
-                  <Link to="/login">Login</Link>
+                  <Link to="/login">Sign In</Link>
                 </Button>
                 <Button asChild>
-                  <Link to="/register">Sign Up</Link>
+                  <Link to="/signup">Create Company</Link>
                 </Button>
               </>
             )}
@@ -186,10 +179,10 @@ export const Navbar = () => {
               ) : (
                 <>
                   <Button variant="ghost" asChild className="w-full">
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Login</Link>
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                   </Button>
                   <Button asChild className="w-full">
-                    <Link to="/register" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link>
+                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>Create Company</Link>
                   </Button>
                 </>
               )}

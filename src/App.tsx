@@ -6,10 +6,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
+import CompanySignup from "./pages/CompanySignup";
 import Dashboard from "./pages/Dashboard";
 import JobBoard from "./pages/JobBoard";
 import JobDetail from "./pages/JobDetail";
+import JobApply from "./pages/JobApply";
 import SearchResults from "./pages/SearchResults";
 import SavedJobs from "./pages/SavedJobs";
 import AppliedJobs from "./pages/AppliedJobs";
@@ -48,11 +49,11 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/signup" element={<CompanySignup />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
-              <Route path="/search" element={<SearchResults />} />
+              <Route path="/jobs/:id/apply" element={<JobApply />} />
               <Route path="/saved" element={<SavedJobs />} />
               <Route path="/applied" element={<AppliedJobs />} />
               <Route path="/interviews" element={<Interviews />} />

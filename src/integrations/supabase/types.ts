@@ -282,6 +282,62 @@ export type Database = {
           },
         ]
       }
+      company_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission: string
+          role: Database["public"]["Enums"]["company_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission: string
+          role: Database["public"]["Enums"]["company_role"]
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission?: string
+          role?: Database["public"]["Enums"]["company_role"]
+        }
+        Relationships: []
+      }
+      company_users: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["company_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["company_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["company_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connections: {
         Row: {
           created_at: string | null
@@ -786,54 +842,72 @@ export type Database = {
           company: string
           company_id: string | null
           created_at: string
+          department: string | null
           description: string
           employee_range: string | null
           experience_level: string | null
           id: string
+          is_published: boolean | null
           is_remote: boolean | null
           location: string
+          location_type: Database["public"]["Enums"]["location_type"] | null
           posted_by: string
           salary: string | null
           skills_required: string[] | null
+          team: string | null
           title: string
           type: string
           updated_at: string
+          visibility: Database["public"]["Enums"]["job_visibility"] | null
+          work_type: Database["public"]["Enums"]["work_type"] | null
         }
         Insert: {
           category: string
           company: string
           company_id?: string | null
           created_at?: string
+          department?: string | null
           description: string
           employee_range?: string | null
           experience_level?: string | null
           id?: string
+          is_published?: boolean | null
           is_remote?: boolean | null
           location: string
+          location_type?: Database["public"]["Enums"]["location_type"] | null
           posted_by: string
           salary?: string | null
           skills_required?: string[] | null
+          team?: string | null
           title: string
           type: string
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["job_visibility"] | null
+          work_type?: Database["public"]["Enums"]["work_type"] | null
         }
         Update: {
           category?: string
           company?: string
           company_id?: string | null
           created_at?: string
+          department?: string | null
           description?: string
           employee_range?: string | null
           experience_level?: string | null
           id?: string
+          is_published?: boolean | null
           is_remote?: boolean | null
           location?: string
+          location_type?: Database["public"]["Enums"]["location_type"] | null
           posted_by?: string
           salary?: string | null
           skills_required?: string[] | null
+          team?: string | null
           title?: string
           type?: string
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["job_visibility"] | null
+          work_type?: Database["public"]["Enums"]["work_type"] | null
         }
         Relationships: [
           {
@@ -1371,6 +1445,41 @@ export type Database = {
           },
         ]
       }
+      public_applications: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          job_id: string
+          resume_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          job_id: string
+          resume_url: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          job_id?: string
+          resume_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recommendations: {
         Row: {
           content: string
@@ -1705,6 +1814,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_company: { Args: { _user_id: string }; Returns: string }
+      has_company_permission: {
+        Args: { _company_id: string; _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["permission_type"]
@@ -1736,7 +1850,10 @@ export type Database = {
         | "under_review"
         | "shortlisted"
         | "rejected"
+      company_role: "super_admin" | "hiring_manager" | "recruiter" | "viewer"
       connection_status: "pending" | "accepted" | "rejected"
+      job_visibility: "internal" | "external"
+      location_type: "onsite" | "hybrid" | "remote"
       permission_type:
         | "create_applicant_profile"
         | "schedule_interview"
@@ -1752,6 +1869,7 @@ export type Database = {
         | "view_all_interviews"
         | "view_own_interviews"
       reaction_type: "like" | "celebrate" | "support" | "insightful" | "love"
+      work_type: "contractor" | "permanent" | "intern"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1886,7 +2004,10 @@ export const Constants = {
         "shortlisted",
         "rejected",
       ],
+      company_role: ["super_admin", "hiring_manager", "recruiter", "viewer"],
       connection_status: ["pending", "accepted", "rejected"],
+      job_visibility: ["internal", "external"],
+      location_type: ["onsite", "hybrid", "remote"],
       permission_type: [
         "create_applicant_profile",
         "schedule_interview",
@@ -1903,6 +2024,7 @@ export const Constants = {
         "view_own_interviews",
       ],
       reaction_type: ["like", "celebrate", "support", "insightful", "love"],
+      work_type: ["contractor", "permanent", "intern"],
     },
   },
 } as const

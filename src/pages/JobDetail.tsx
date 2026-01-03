@@ -6,12 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, MapPin, Building2, Clock, Briefcase, DollarSign, Users } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
 
 interface Job {
   id: string;
@@ -26,6 +20,10 @@ interface Job {
   is_remote: boolean | null;
   employee_range: string | null;
   skills_required: string[] | null;
+  location_type: string | null;
+  work_type: string | null;
+  team: string | null;
+  department: string | null;
   created_at: string;
 }
 
@@ -33,14 +31,6 @@ const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
-  const { isAuthenticated, user } = useAuth();
-  const [applying, setApplying] = useState(false);
-  const [applicationForm, setApplicationForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    coverLetter: ''
-  });
 
   useEffect(() => {
     if (id) {
@@ -62,29 +52,6 @@ const JobDetail = () => {
       console.error('Error fetching job:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleApply = async () => {
-    if (!job || !user) return;
-    
-    setApplying(true);
-    try {
-      const { error } = await supabase
-        .from('job_applications')
-        .insert({
-          job_id: job.id,
-          user_id: user.id,
-          applicant_name: applicationForm.name,
-          applicant_email: applicationForm.email,
-        });
-
-      if (error) throw error;
-      toast.success('Application submitted successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to submit application');
-    } finally {
-      setApplying(false);
     }
   };
 
@@ -141,22 +108,18 @@ const JobDetail = () => {
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
                   {job.location}
-                  {job.is_remote && ' (Remote)'}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  Posted {formatDate(job.created_at)}
                 </span>
               </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {job.category} – {job.department || job.category} / {job.work_type || job.type} / {job.location_type || (job.is_remote ? 'Remote' : 'On-site')}
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">{job.category}</Badge>
-              <Badge variant="outline">{job.type}</Badge>
-              {job.experience_level && (
-                <Badge variant="outline">{job.experience_level}</Badge>
-              )}
-              {job.is_remote && <Badge>Remote</Badge>}
+              <Badge variant="outline">{job.work_type || job.type}</Badge>
+              {job.location_type && <Badge variant="outline" className="capitalize">{job.location_type}</Badge>}
+              {job.team && <Badge variant="outline">{job.team}</Badge>}
             </div>
 
             <Separator />
@@ -187,70 +150,15 @@ const JobDetail = () => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Apply for this position</CardTitle>
+                <CardTitle className="text-lg">Apply for this job</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isAuthenticated ? (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="w-full">Apply Now</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Apply for {job.title}</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div>
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input
-                            id="name"
-                            value={applicationForm.name}
-                            onChange={(e) => setApplicationForm(prev => ({ ...prev, name: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={applicationForm.email}
-                            onChange={(e) => setApplicationForm(prev => ({ ...prev, email: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="phone">Phone</Label>
-                          <Input
-                            id="phone"
-                            type="tel"
-                            value={applicationForm.phone}
-                            onChange={(e) => setApplicationForm(prev => ({ ...prev, phone: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="coverLetter">Cover Letter</Label>
-                          <Textarea
-                            id="coverLetter"
-                            rows={4}
-                            value={applicationForm.coverLetter}
-                            onChange={(e) => setApplicationForm(prev => ({ ...prev, coverLetter: e.target.value }))}
-                          />
-                        </div>
-                        <Button onClick={handleApply} disabled={applying} className="w-full">
-                          {applying ? 'Submitting...' : 'Submit Application'}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      Sign in to apply for this position
-                    </p>
-                    <Link to="/login">
-                      <Button className="w-full">Sign In to Apply</Button>
-                    </Link>
-                  </>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  Submit your resume to apply for this position. No account required.
+                </p>
+                <Link to={`/jobs/${id}/apply`}>
+                  <Button className="w-full">Apply for this job</Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -262,8 +170,15 @@ const JobDetail = () => {
                 <div className="flex items-center gap-3">
                   <Briefcase className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Job Type</p>
-                    <p className="font-medium">{job.type}</p>
+                    <p className="text-sm text-muted-foreground">Work Type</p>
+                    <p className="font-medium capitalize">{job.work_type || job.type}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Location Type</p>
+                    <p className="font-medium capitalize">{job.location_type || (job.is_remote ? 'Remote' : 'On-site')}</p>
                   </div>
                 </div>
                 {job.salary && (
@@ -284,6 +199,13 @@ const JobDetail = () => {
                     </div>
                   </div>
                 )}
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Posted</p>
+                    <p className="font-medium">{formatDate(job.created_at)}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
