@@ -39,10 +39,10 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <Toaster />
-    <Sonner />
     <BrowserRouter>
       <AuthProvider>
+        <Toaster />
+        <Sonner />
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <main className="flex-1">
