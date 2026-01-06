@@ -9,7 +9,6 @@ interface AuthContextType {
   session: Session | null;
   userRole: UserRole | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
   register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -104,17 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error;
   };
 
-  const loginWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-    
-    if (error) throw error;
-  };
-
   const register = async (email: string, password: string, name: string, role: UserRole) => {
     // Prevent admin registration
     if (role === 'admin') {
@@ -179,7 +167,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session,
       userRole,
       login, 
-      loginWithGoogle,
       register, 
       logout, 
       isAuthenticated: !!user,
