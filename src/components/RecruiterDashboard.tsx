@@ -8,8 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2, Edit, Users, Eye, EyeOff } from 'lucide-react';
+import ApplicationsViewer from './ApplicationsViewer';
 
 interface Job {
   id: string;
@@ -22,6 +25,8 @@ interface Job {
   category: string;
   employee_range: string;
   created_at: string;
+  is_published: boolean | null;
+  visibility: string | null;
 }
 
 interface JobApplication {
@@ -38,6 +43,7 @@ const RecruiterDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [viewingApplicationsFor, setViewingApplicationsFor] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -47,7 +53,9 @@ const RecruiterDashboard = () => {
     salary: '',
     type: 'Full-time',
     category: 'IT/Tech',
-    employee_range: '1-10'
+    employee_range: '1-10',
+    visibility: 'external',
+    is_published: true
   });
   
   const [selectedJobApplications, setSelectedJobApplications] = useState<JobApplication[]>([]);
@@ -97,7 +105,9 @@ const RecruiterDashboard = () => {
           salary: formData.salary,
           type: formData.type,
           category: formData.category,
-          employee_range: formData.employee_range
+          employee_range: formData.employee_range,
+          visibility: formData.visibility as 'internal' | 'external',
+          is_published: formData.is_published
         })
         .eq('id', editingJob.id);
 
@@ -121,7 +131,9 @@ const RecruiterDashboard = () => {
         .from('jobs')
         .insert([{
           ...formData,
-          posted_by: user.id
+          posted_by: user.id,
+          visibility: formData.visibility as 'internal' | 'external',
+          is_published: formData.is_published
         }]);
 
       if (error) {
@@ -176,8 +188,25 @@ const RecruiterDashboard = () => {
       salary: job.salary || '',
       type: job.type,
       category: job.category,
-      employee_range: job.employee_range || '1-10'
+      employee_range: job.employee_range || '1-10',
+      visibility: job.visibility || 'external',
+      is_published: job.is_published ?? true
     });
+  };
+
+  const togglePublishJob = async (jobId: string, currentStatus: boolean | null) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ is_published: !currentStatus })
+      .eq('id', jobId);
+
+    if (!error) {
+      fetchJobs();
+      toast({
+        title: 'Success',
+        description: `Job ${!currentStatus ? 'published' : 'unpublished'} successfully`
+      });
+    }
   };
 
   const fetchApplicationsForJob = async (jobId: string) => {
@@ -209,7 +238,9 @@ const RecruiterDashboard = () => {
       salary: '',
       type: 'Full-time',
       category: 'IT/Tech',
-      employee_range: '1-10'
+      employee_range: '1-10',
+      visibility: 'external',
+      is_published: true
     });
   };
 
@@ -369,16 +400,33 @@ const RecruiterDashboard = () => {
                 </Card>
               ) : (
                 jobs.map((job) => (
-                  <Card key={job.id}>
+                  <Card key={job.id} className={`border-l-4 ${job.is_published ? 'border-l-green-500' : 'border-l-muted'}`}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            {job.is_published ? (
+                              <Badge className="bg-green-100 text-green-700">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Published
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                Draft
+                              </Badge>
+                            )}
+                          </div>
                           <CardTitle>{job.title}</CardTitle>
                           <CardDescription>
                             {job.company} • {job.location} • {job.type}
                           </CardDescription>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
+                          <Switch 
+                            checked={job.is_published || false}
+                            onCheckedChange={() => togglePublishJob(job.id, job.is_published)}
+                          />
                           <Button
                             size="sm"
                             variant="outline"
@@ -410,30 +458,17 @@ const RecruiterDashboard = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => fetchApplicationsForJob(job.id)}
+                          className="gap-1"
+                          onClick={() => setViewingApplicationsFor(viewingApplicationsFor === job.id ? null : job.id)}
                         >
+                          <Users className="h-4 w-4" />
                           View Applications
                         </Button>
                       </div>
                       
-                      {showingApplicationsFor === job.id && (
+                      {viewingApplicationsFor === job.id && (
                         <div className="mt-4 pt-4 border-t">
-                          <h4 className="font-semibold mb-3">Applications ({selectedJobApplications.length})</h4>
-                          {selectedJobApplications.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No applications yet</p>
-                          ) : (
-                            <div className="space-y-2">
-                              {selectedJobApplications.map((app) => (
-                                <div key={app.id} className="p-3 bg-muted rounded-lg">
-                                  <p className="font-medium text-sm">{app.applicant_name}</p>
-                                  <p className="text-sm text-muted-foreground">{app.applicant_email}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Applied: {new Date(app.applied_at).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <ApplicationsViewer jobId={job.id} jobTitle={job.title} />
                         </div>
                       )}
                     </CardContent>

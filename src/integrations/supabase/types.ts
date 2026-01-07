@@ -1447,28 +1447,61 @@ export type Database = {
       }
       public_applications: {
         Row: {
+          consent_to_contact: boolean | null
+          cover_letter: string | null
           created_at: string | null
+          current_company: string | null
+          current_location: string | null
+          eligibility_to_work: boolean | null
           email: string
           full_name: string
+          github_url: string | null
           id: string
           job_id: string
+          linkedin_url: string | null
+          other_website: string | null
+          phone: string | null
+          portfolio_url: string | null
           resume_url: string
+          status: string | null
         }
         Insert: {
+          consent_to_contact?: boolean | null
+          cover_letter?: string | null
           created_at?: string | null
+          current_company?: string | null
+          current_location?: string | null
+          eligibility_to_work?: boolean | null
           email: string
           full_name: string
+          github_url?: string | null
           id?: string
           job_id: string
+          linkedin_url?: string | null
+          other_website?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
           resume_url: string
+          status?: string | null
         }
         Update: {
+          consent_to_contact?: boolean | null
+          cover_letter?: string | null
           created_at?: string | null
+          current_company?: string | null
+          current_location?: string | null
+          eligibility_to_work?: boolean | null
           email?: string
           full_name?: string
+          github_url?: string | null
           id?: string
           job_id?: string
+          linkedin_url?: string | null
+          other_website?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
           resume_url?: string
+          status?: string | null
         }
         Relationships: [
           {
