@@ -1852,6 +1852,14 @@ export type Database = {
         Args: { _company_id: string; _permission: string; _user_id: string }
         Returns: boolean
       }
+      has_company_role: {
+        Args: {
+          _company_id: string
+          _role: Database["public"]["Enums"]["company_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["permission_type"]
@@ -1869,6 +1877,10 @@ export type Database = {
       increment_article_views: {
         Args: { article_id: string }
         Returns: undefined
+      }
+      is_company_member: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
