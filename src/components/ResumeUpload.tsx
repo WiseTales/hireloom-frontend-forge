@@ -19,6 +19,33 @@ export default function ResumeUpload({ resumeUrl, onUploadSuccess }: ResumeUploa
   const [uploading, setUploading] = useState(false);
   const [currentResume, setCurrentResume] = useState(resumeUrl);
 
+  const getStoragePathFromResumeValue = (value: string) => {
+    const marker = '/resumes/';
+    const idx = value.indexOf(marker);
+    if (idx !== -1) return decodeURIComponent(value.slice(idx + marker.length));
+    return value;
+  };
+
+  const handleView = async () => {
+    if (!currentResume) return;
+
+    try {
+      const path = getStoragePathFromResumeValue(currentResume);
+      const { data, error } = await supabase.storage
+        .from('resumes')
+        .createSignedUrl(path, 60, { download: true });
+
+      if (error) throw error;
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (error: any) {
+      toast({
+        title: 'Unable to open resume',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
@@ -139,10 +166,8 @@ export default function ResumeUpload({ resumeUrl, onUploadSuccess }: ResumeUploa
               <span className="text-sm font-medium">Resume uploaded</span>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <a href={currentResume} target="_blank" rel="noopener noreferrer">
-                  View
-                </a>
+              <Button variant="outline" size="sm" onClick={handleView}>
+                View
               </Button>
               <Button variant="destructive" size="sm" onClick={handleDelete}>
                 <Trash2 className="h-4 w-4" />

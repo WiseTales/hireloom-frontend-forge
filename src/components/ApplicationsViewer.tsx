@@ -90,6 +90,30 @@ const ApplicationsViewer = ({ jobId, jobTitle }: ApplicationsViewerProps) => {
     }
   };
 
+  const getStoragePathFromResumeValue = (value: string) => {
+    // value can be either:
+    // - a full URL like: https://.../storage/v1/object/public/resumes/<path>
+    // - a plain storage path like: <jobId>/<file>.pdf
+    const marker = '/resumes/';
+    const idx = value.indexOf(marker);
+    if (idx !== -1) return decodeURIComponent(value.slice(idx + marker.length));
+    return value;
+  };
+
+  const openResume = async (resumeValue: string) => {
+    try {
+      const path = getStoragePathFromResumeValue(resumeValue);
+      const { data, error } = await supabase.storage
+        .from('resumes')
+        .createSignedUrl(path, 60, { download: true });
+
+      if (error) throw error;
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      console.error('Error opening resume:', e);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-8 text-center text-muted-foreground">
@@ -176,13 +200,16 @@ const ApplicationsViewer = ({ jobId, jobTitle }: ApplicationsViewerProps) => {
 
             {/* Links */}
             <div className="flex flex-wrap gap-2 mb-4">
-              <a href={app.resume_url} target="_blank" rel="noopener noreferrer">
-                <Button size="sm" variant="outline" className="gap-1">
-                  <FileText className="h-4 w-4" />
-                  Resume
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
-              </a>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                onClick={() => openResume(app.resume_url)}
+              >
+                <FileText className="h-4 w-4" />
+                Resume
+                <ExternalLink className="h-3 w-3" />
+              </Button>
               {app.linkedin_url && (
                 <a href={app.linkedin_url} target="_blank" rel="noopener noreferrer">
                   <Button size="sm" variant="outline" className="gap-1">
