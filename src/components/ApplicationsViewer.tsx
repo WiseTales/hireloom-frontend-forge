@@ -36,6 +36,7 @@ interface ApplicationsViewerProps {
 const ApplicationsViewer = ({ jobId, jobTitle }: ApplicationsViewerProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +45,8 @@ const ApplicationsViewer = ({ jobId, jobTitle }: ApplicationsViewerProps) => {
 
   const fetchApplications = async () => {
     setLoading(true);
+    setErrorMsg(null);
+
     const { data, error } = await supabase
       .from('public_applications')
       .select('*')
@@ -52,9 +55,12 @@ const ApplicationsViewer = ({ jobId, jobTitle }: ApplicationsViewerProps) => {
 
     if (error) {
       console.error('Error fetching applications:', error);
+      setApplications([]);
+      setErrorMsg(error.message || 'Failed to load applications.');
     } else {
       setApplications(data || []);
     }
+
     setLoading(false);
   };
 
@@ -88,6 +94,17 @@ const ApplicationsViewer = ({ jobId, jobTitle }: ApplicationsViewerProps) => {
     return (
       <div className="py-8 text-center text-muted-foreground">
         Loading applications...
+      </div>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-sm text-destructive mb-3">{errorMsg}</p>
+        <Button size="sm" variant="outline" onClick={fetchApplications}>
+          Retry
+        </Button>
       </div>
     );
   }
