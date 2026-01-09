@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MapPin, Building2, Mail, Calendar, Users, Briefcase } from 'lucide-react';
-import ResumeUpload from '@/components/ResumeUpload';
+
 import { ProfileViews } from '@/components/ProfileViews';
 import { Skills } from '@/components/profile/Skills';
 import { Recommendations } from '@/components/profile/Recommendations';
@@ -27,7 +27,7 @@ const Profile = () => {
   const [stats, setStats] = useState({ connections: 0, posts: 0 });
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  
   const [hasExperience, setHasExperience] = useState(false);
   const [hasEducation, setHasEducation] = useState(false);
   const [hasSkills, setHasSkills] = useState(false);
@@ -65,7 +65,6 @@ const Profile = () => {
     
     if (profileData) {
       setProfile(profileData);
-      setResumeUrl(profileData.resume_url);
     }
 
     // Fetch stats
@@ -217,10 +216,6 @@ const Profile = () => {
             
             {isOwnProfile && (
               <>
-                <ResumeUpload 
-                  resumeUrl={resumeUrl} 
-                  onUploadSuccess={(url) => setResumeUrl(url)} 
-                />
                 <ProfileCompletion
                   profile={profile}
                   hasExperience={hasExperience}

@@ -838,6 +838,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          application_url: string | null
           category: string
           company: string
           company_id: string | null
@@ -862,6 +863,7 @@ export type Database = {
           work_type: Database["public"]["Enums"]["work_type"] | null
         }
         Insert: {
+          application_url?: string | null
           category: string
           company: string
           company_id?: string | null
@@ -886,6 +888,7 @@ export type Database = {
           work_type?: Database["public"]["Enums"]["work_type"] | null
         }
         Update: {
+          application_url?: string | null
           category?: string
           company?: string
           company_id?: string | null

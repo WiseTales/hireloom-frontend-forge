@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, MapPin, Building2, Clock, Briefcase, DollarSign, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Building2, Clock, Briefcase, DollarSign, Users, ExternalLink } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -24,6 +24,7 @@ interface Job {
   work_type: string | null;
   team: string | null;
   department: string | null;
+  application_url: string | null;
   created_at: string;
 }
 
@@ -58,6 +59,12 @@ const JobDetail = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  const handleApplyClick = () => {
+    if (job?.application_url) {
+      window.open(job.application_url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   if (loading) {
@@ -153,12 +160,21 @@ const JobDetail = () => {
                 <CardTitle className="text-lg">Apply for this job</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Submit your resume to apply for this position. No account required.
-                </p>
-                <Link to={`/jobs/${id}/apply`}>
-                  <Button className="w-full">Apply for this job</Button>
-                </Link>
+                {job.application_url ? (
+                  <>
+                    <Button className="w-full gap-2" onClick={handleApplyClick}>
+                      Apply on Company Website
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      You'll be redirected to the employer's official website. HireLoom does not process applications.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Application link not available. Please check back later or contact the employer directly.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
