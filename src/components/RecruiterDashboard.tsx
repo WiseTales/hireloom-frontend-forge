@@ -11,8 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Edit, Users, Eye, EyeOff } from 'lucide-react';
-import ApplicationsViewer from './ApplicationsViewer';
+import { Trash2, Edit, Eye, EyeOff, ExternalLink } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -24,16 +23,10 @@ interface Job {
   type: string;
   category: string;
   employee_range: string;
+  application_url: string | null;
   created_at: string;
   is_published: boolean | null;
   visibility: string | null;
-}
-
-interface JobApplication {
-  id: string;
-  applicant_name: string;
-  applicant_email: string;
-  applied_at: string;
 }
 
 const RecruiterDashboard = () => {
@@ -43,7 +36,6 @@ const RecruiterDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
-  const [viewingApplicationsFor, setViewingApplicationsFor] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -54,12 +46,10 @@ const RecruiterDashboard = () => {
     type: 'Full-time',
     category: 'IT/Tech',
     employee_range: '1-10',
+    application_url: '',
     visibility: 'external',
     is_published: true
   });
-  
-  const [selectedJobApplications, setSelectedJobApplications] = useState<JobApplication[]>([]);
-  const [showingApplicationsFor, setShowingApplicationsFor] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobs();
@@ -91,6 +81,15 @@ const RecruiterDashboard = () => {
     e.preventDefault();
     if (!user) return;
 
+    if (!formData.application_url) {
+      toast({
+        title: 'Application URL Required',
+        description: 'Please provide the official careers/application page link',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     if (editingJob) {
@@ -106,6 +105,7 @@ const RecruiterDashboard = () => {
           type: formData.type,
           category: formData.category,
           employee_range: formData.employee_range,
+          application_url: formData.application_url,
           visibility: formData.visibility as 'internal' | 'external',
           is_published: formData.is_published
         })
@@ -189,6 +189,7 @@ const RecruiterDashboard = () => {
       type: job.type,
       category: job.category,
       employee_range: job.employee_range || '1-10',
+      application_url: job.application_url || '',
       visibility: job.visibility || 'external',
       is_published: job.is_published ?? true
     });
@@ -209,25 +210,6 @@ const RecruiterDashboard = () => {
     }
   };
 
-  const fetchApplicationsForJob = async (jobId: string) => {
-    const { data, error } = await supabase
-      .from('job_applications')
-      .select('*')
-      .eq('job_id', jobId)
-      .order('applied_at', { ascending: false });
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch applications',
-        variant: 'destructive'
-      });
-    } else {
-      setSelectedJobApplications(data || []);
-      setShowingApplicationsFor(jobId);
-    }
-  };
-
   const resetForm = () => {
     setEditingJob(null);
     setFormData({
@@ -239,6 +221,7 @@ const RecruiterDashboard = () => {
       type: 'Full-time',
       category: 'IT/Tech',
       employee_range: '1-10',
+      application_url: '',
       visibility: 'external',
       is_published: true
     });
@@ -357,6 +340,21 @@ const RecruiterDashboard = () => {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="application_url">Application Page URL *</Label>
+                      <Input
+                        id="application_url"
+                        type="url"
+                        required
+                        value={formData.application_url}
+                        onChange={(e) => setFormData({ ...formData, application_url: e.target.value })}
+                        placeholder="https://yourcompany.com/careers/apply"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Applicants will be redirected to this URL to apply
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -451,26 +449,24 @@ const RecruiterDashboard = () => {
                         {job.employee_range && ` • Company Size: ${job.employee_range}`}
                       </p>
                       <p className="text-sm line-clamp-3">{job.description}</p>
+                      
+                      {job.application_url && (
+                        <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                          <ExternalLink className="h-4 w-4" />
+                          <a 
+                            href={job.application_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="hover:underline truncate max-w-md"
+                          >
+                            {job.application_url}
+                          </a>
+                        </div>
+                      )}
+                      
                       <p className="text-xs text-muted-foreground mt-4">
                         Posted: {new Date(job.created_at).toLocaleDateString()}
                       </p>
-                      <div className="mt-4">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="gap-1"
-                          onClick={() => setViewingApplicationsFor(viewingApplicationsFor === job.id ? null : job.id)}
-                        >
-                          <Users className="h-4 w-4" />
-                          View Applications
-                        </Button>
-                      </div>
-                      
-                      {viewingApplicationsFor === job.id && (
-                        <div className="mt-4 pt-4 border-t">
-                          <ApplicationsViewer jobId={job.id} jobTitle={job.title} />
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 ))
