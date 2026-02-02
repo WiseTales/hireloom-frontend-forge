@@ -20,17 +20,31 @@ interface ExtractedJob {
   apply_url: string | null;
 }
 
+type JobAutofillResponse =
+  | { success: true; data: ExtractedJob }
+  | { success: false; error: string };
+
+function jsonResponse(payload: JobAutofillResponse, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
 function cleanHtmlToText(html: string): string {
   // Remove script and style tags with their content
   let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
   text = text.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '');
+  // Drop common non-content containers
+  text = text.replace(/<(header|footer|nav|aside)[^>]*>[\s\S]*?<\/(header|footer|nav|aside)>/gi, '');
   
   // Remove HTML comments
   text = text.replace(/<!--[\s\S]*?-->/g, '');
   
   // Replace common block elements with newlines
-  text = text.replace(/<(br|p|div|h[1-6]|li|tr)[^>]*>/gi, '\n');
+  text = text.replace(/<(br)\s*\/?\s*>/gi, '\n');
+  text = text.replace(/<(p|div|h[1-6]|li|tr|section|article)[^>]*>/gi, '\n');
   
   // Remove all remaining HTML tags
   text = text.replace(/<[^>]+>/g, ' ');
@@ -49,12 +63,35 @@ function cleanHtmlToText(html: string): string {
   text = text.replace(/&mdash;/g, '—');
   text = text.replace(/&ndash;/g, '–');
   
-  // Normalize whitespace
-  text = text.replace(/\s+/g, ' ');
-  text = text.replace(/\n\s+/g, '\n');
+  // Normalize whitespace while preserving newlines
+  text = text.replace(/\r\n/g, '\n');
+  text = text.replace(/[\t\f\v ]+/g, ' ');
+  text = text.replace(/\n[ \t]+/g, '\n');
   text = text.replace(/\n{3,}/g, '\n\n');
+  text = text.replace(/\s+\n/g, '\n');
   
   return text.trim();
+}
+
+function extractJsonFromModelText(raw: string): string | null {
+  const text = raw.trim();
+
+  // 1) ```json ... ```
+  const fencedJson = text.match(/```json\s*([\s\S]*?)```/i);
+  if (fencedJson?.[1]) return fencedJson[1].trim();
+
+  // 2) ``` ... ```
+  const fenced = text.match(/```\s*([\s\S]*?)```/);
+  if (fenced?.[1]) return fenced[1].trim();
+
+  // 3) first {...} block (best-effort)
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return text.slice(firstBrace, lastBrace + 1).trim();
+  }
+
+  return null;
 }
 
 serve(async (req) => {
@@ -66,10 +103,7 @@ serve(async (req) => {
     const { url } = await req.json();
 
     if (!url) {
-      return new Response(
-        JSON.stringify({ error: 'URL is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ success: false, error: 'URL is required' });
     }
 
     // Validate URL
@@ -80,10 +114,10 @@ serve(async (req) => {
         throw new Error('Invalid protocol');
       }
     } catch {
-      return new Response(
-        JSON.stringify({ error: 'Invalid URL format. Please provide a valid HTTP/HTTPS URL.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({
+        success: false,
+        error: 'Invalid URL format. Please provide a valid HTTP/HTTPS URL.',
+      });
     }
 
     console.log('Fetching job posting from:', url);
@@ -96,6 +130,7 @@ serve(async (req) => {
     try {
       const response = await fetch(url, {
         signal: controller.signal,
+        redirect: 'follow',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -105,20 +140,21 @@ serve(async (req) => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        return new Response(
-          JSON.stringify({ error: `Failed to fetch job page: ${response.status} ${response.statusText}` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return jsonResponse({
+          success: false,
+          error: `Failed to fetch job page: ${response.status} ${response.statusText}`,
+        });
       }
 
       htmlContent = await response.text();
     } catch (fetchError) {
       clearTimeout(timeoutId);
       console.error('Fetch error:', fetchError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch the job page. The page may be behind a login or blocking automated access.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const details = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      return jsonResponse({
+        success: false,
+        error: `Failed to fetch the job page. The page may be behind a login, blocking automated access, or the URL may be invalid. Details: ${details}`,
+      });
     }
 
     // Clean HTML to text
@@ -131,10 +167,10 @@ serve(async (req) => {
       : cleanedText;
 
     if (truncatedText.length < 100) {
-      return new Response(
-        JSON.stringify({ error: 'Could not extract meaningful content from the page. The page may require JavaScript to load or is blocking access.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({
+        success: false,
+        error: 'Could not extract meaningful content from the page. The page may require JavaScript to load or is blocking access.',
+      });
     }
 
     console.log('Extracted text length:', truncatedText.length);
@@ -143,13 +179,15 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       console.error('LOVABLE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'AI service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ success: false, error: 'AI service not configured' });
     }
 
-    const systemPrompt = `You are an expert HR data extractor. Given raw job posting text scraped from a website, extract structured job details. If a field is missing or cannot be determined, return null for that field. Do not hallucinate or make up information. Return clean JSON only.`;
+    const systemPrompt = `You are an expert HR data extractor. Given raw job posting text scraped from a website, extract structured job details.
+
+Rules:
+- If a field is missing or cannot be determined, return null.
+- Do not hallucinate.
+- Output MUST be a single JSON object only. No markdown, no code fences, no explanations.`;
 
     const userPrompt = `Extract the following fields from this job posting text and return as JSON:
 
@@ -190,56 +228,44 @@ ${truncatedText}`;
       console.error('AI API error:', aiResponse.status, errorText);
       
       if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'AI service rate limit exceeded. Please try again in a moment.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return jsonResponse({
+          success: false,
+          error: 'AI service rate limit exceeded. Please try again in a moment.',
+        });
       }
       if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI service credits exhausted. Please contact support.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return jsonResponse({
+          success: false,
+          error: 'AI service credits exhausted. Please contact support.',
+        });
       }
-      
-      return new Response(
-        JSON.stringify({ error: 'AI extraction failed. Please try again.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+
+      return jsonResponse({
+        success: false,
+        error: 'AI extraction failed. Please try again.',
+      });
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content;
 
     if (!content) {
-      return new Response(
-        JSON.stringify({ error: 'AI returned empty response' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ success: false, error: 'AI returned empty response' });
     }
 
     // Parse the JSON from the AI response
     let extractedData: ExtractedJob;
     try {
-      // Remove markdown code blocks if present
-      let jsonStr = content.trim();
-      if (jsonStr.startsWith('```json')) {
-        jsonStr = jsonStr.slice(7);
-      } else if (jsonStr.startsWith('```')) {
-        jsonStr = jsonStr.slice(3);
-      }
-      if (jsonStr.endsWith('```')) {
-        jsonStr = jsonStr.slice(0, -3);
-      }
-      jsonStr = jsonStr.trim();
-      
+      const jsonStr = extractJsonFromModelText(content);
+      if (!jsonStr) throw new Error('No JSON object found in model output');
       extractedData = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error('Failed to parse AI response:', content);
-      return new Response(
-        JSON.stringify({ error: 'Failed to parse AI response. Please try again.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const details = parseError instanceof Error ? parseError.message : String(parseError);
+      return jsonResponse({
+        success: false,
+        error: `Failed to parse AI response. Please try again. Details: ${details}`,
+      });
     }
 
     // Use provided URL as fallback for apply_url
@@ -249,16 +275,13 @@ ${truncatedText}`;
 
     console.log('Successfully extracted job data');
 
-    return new Response(
-      JSON.stringify({ success: true, data: extractedData }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ success: true, data: extractedData });
 
   } catch (error) {
     console.error('Job autofill error:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'An unexpected error occurred' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({
+      success: false,
+      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+    });
   }
 });
