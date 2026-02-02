@@ -19,6 +19,8 @@ import { ConnectionSuggestions } from '@/components/ConnectionSuggestions';
 import { AboutSection } from '@/components/profile/AboutSection';
 import { CoverPhoto } from '@/components/profile/CoverPhoto';
 import { ProfileCompletion } from '@/components/profile/ProfileCompletion';
+import { ProfileAutofill } from '@/components/profile/ProfileAutofill';
+import { AutofillDataReview } from '@/components/profile/AutofillDataReview';
 
 const Profile = () => {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
@@ -31,6 +33,7 @@ const Profile = () => {
   const [hasExperience, setHasExperience] = useState(false);
   const [hasEducation, setHasEducation] = useState(false);
   const [hasSkills, setHasSkills] = useState(false);
+  const [extractedData, setExtractedData] = useState<any>(null);
 
   const profileUserId = userId || user?.id;
   const isOwnProfile = user?.id === profileUserId;
@@ -206,6 +209,27 @@ const Profile = () => {
           </TabsList>
 
           <TabsContent value="about" className="space-y-4">
+            {/* AI Autofill Section - Only for own profile */}
+            {isOwnProfile && !extractedData && (
+              <ProfileAutofill 
+                profileId={profileUserId!}
+                onDataExtracted={(data) => setExtractedData(data)}
+              />
+            )}
+            
+            {/* Review extracted data before saving */}
+            {isOwnProfile && extractedData && (
+              <AutofillDataReview
+                data={extractedData}
+                profileId={profileUserId!}
+                onSaveComplete={() => {
+                  setExtractedData(null);
+                  fetchProfile();
+                  checkProfileCompletion();
+                }}
+              />
+            )}
+
             <AboutSection
               profileId={profileUserId!}
               bio={profile?.bio}
