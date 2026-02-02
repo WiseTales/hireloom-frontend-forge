@@ -1,1 +1,4 @@
 project_id = "ctcezjjamqnarnlhfdrh"
+
+[functions.job-autofill]
+verify_jwt = false
