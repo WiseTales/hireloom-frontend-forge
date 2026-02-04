@@ -31,14 +31,24 @@ interface Job {
 
 const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchJob();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (user && id) {
+      checkApplicationStatus();
+    }
+  }, [user, id]);
 
   const fetchJob = async () => {
     try {
@@ -57,15 +67,30 @@ const JobDetail = () => {
     }
   };
 
+  const checkApplicationStatus = async () => {
+    if (!user || !id) return;
+    
+    const { data } = await supabase
+      .from('job_applications')
+      .select('id')
+      .eq('job_id', id)
+      .eq('user_id', user.id)
+      .single();
+    
+    setHasApplied(!!data);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   const handleApplyClick = () => {
-    if (job?.application_url) {
-      window.open(job.application_url, '_blank', 'noopener,noreferrer');
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/jobs/${id}` } });
+      return;
     }
+    setShowApplyModal(true);
   };
 
   if (loading) {

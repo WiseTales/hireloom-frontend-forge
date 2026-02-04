@@ -18,7 +18,6 @@ interface JobFormData {
   type: string;
   category: string;
   employee_range: string;
-  application_url: string;
   visibility: string;
   is_published: boolean;
 }
