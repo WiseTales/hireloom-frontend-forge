@@ -188,8 +188,8 @@ const JobDetail = () => {
               <CardContent className="space-y-4">
                 {hasApplied ? (
                   <div className="flex flex-col items-center py-4">
-                    <div className="rounded-full bg-green-100 p-2 mb-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    <div className="rounded-full bg-primary/10 p-2 mb-3">
+                      <CheckCircle2 className="h-6 w-6 text-primary" />
                     </div>
                     <p className="font-medium text-center">Application Submitted</p>
                     <p className="text-xs text-muted-foreground text-center mt-1">

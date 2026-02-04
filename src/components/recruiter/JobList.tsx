@@ -56,7 +56,7 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   {job.is_published ? (
-                    <Badge className="bg-green-100 text-green-700">
+                    <Badge className="bg-primary/10 text-primary">
                       <Eye className="h-3 w-3 mr-1" />
                       Published
                     </Badge>

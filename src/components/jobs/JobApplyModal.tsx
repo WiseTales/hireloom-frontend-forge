@@ -124,8 +124,8 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="rounded-full bg-green-100 p-3 mb-4">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="rounded-full bg-primary/10 p-3 mb-4">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
             <DialogTitle className="text-xl mb-2">Already Applied</DialogTitle>
             <DialogDescription>
