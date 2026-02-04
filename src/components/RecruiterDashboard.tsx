@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { JobPostForm } from '@/components/recruiter/JobPostForm';
 import { JobList } from '@/components/recruiter/JobList';
+import { ApplicantsList } from '@/components/recruiter/ApplicantsList';
+import { Users } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -48,7 +50,7 @@ const RecruiterDashboard = () => {
 
   const fetchJobs = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     const { data, error } = await supabase
       .from('jobs')
@@ -213,6 +215,10 @@ const RecruiterDashboard = () => {
           <TabsList>
             <TabsTrigger value="post">Post Job</TabsTrigger>
             <TabsTrigger value="history">My Jobs ({jobs.length})</TabsTrigger>
+            <TabsTrigger value="applicants" className="relative">
+              Applicants
+              <Users className="h-3 w-3 ml-2" />
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="post">
@@ -234,6 +240,10 @@ const RecruiterDashboard = () => {
               onDelete={handleDelete}
               onTogglePublish={togglePublishJob}
             />
+          </TabsContent>
+
+          <TabsContent value="applicants">
+            <ApplicantsList />
           </TabsContent>
         </Tabs>
       </div>

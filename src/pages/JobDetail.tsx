@@ -25,7 +25,7 @@ interface Job {
   location_type: string | null;
   work_type: string | null;
   team: string | null;
-  department: string | null;
+  posted_by: string;
   created_at: string;
 }
 
@@ -257,7 +257,7 @@ const JobDetail = () => {
         <JobApplyModal
           open={showApplyModal}
           onOpenChange={setShowApplyModal}
-          job={{ id: job.id, title: job.title, company: job.company }}
+          job={{ id: job.id, title: job.title, company: job.company, posted_by: job.posted_by }}
           onSuccess={() => setHasApplied(true)}
         />
       )}

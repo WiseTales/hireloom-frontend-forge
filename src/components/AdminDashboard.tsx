@@ -4,7 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Eye, EyeOff, ExternalLink, Users } from 'lucide-react';
+import { ApplicantsList } from '@/components/recruiter/ApplicantsList';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Recruiter {
   id: string;
@@ -82,7 +84,7 @@ const AdminDashboard = () => {
         // Group jobs by recruiter
         const recruitersWithJobs: RecruiterWithJobs[] = (profiles || []).map((profile) => {
           const recruiterJobs = allJobs.filter(job => job.posted_by === profile.id);
-          
+
           return {
             recruiter: {
               id: profile.id,
@@ -130,130 +132,149 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl md:text-4xl font-bold mb-8">Admin Dashboard</h1>
 
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Recruiters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold text-primary">{stats.totalRecruiters}</p>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="stats" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="stats">Platform Stats</TabsTrigger>
+            <TabsTrigger value="recruiters">Recruiters & Jobs</TabsTrigger>
+            <TabsTrigger value="applicants">
+              All Applicants
+              <Users className="h-4 w-4 ml-2" />
+            </TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Jobs Posted</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold text-primary">{stats.totalJobs}</p>
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="stats">
+            {/* Stats Cards */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Total Recruiters</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-primary">{stats.totalRecruiters}</p>
+                </CardContent>
+              </Card>
 
-        {/* Recruiters and Their Jobs */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recruiters & Their Job Postings</CardTitle>
-            <CardDescription>View all recruiters and the jobs they have posted</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recruitersData.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">
-                No recruiters have registered yet.
-              </p>
-            ) : (
-              <Accordion type="single" collapsible className="w-full">
-                {recruitersData.map((data, index) => (
-                  <AccordionItem key={data.recruiter.id} value={`recruiter-${index}`}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <div className="text-left">
-                          <p className="font-semibold">{data.recruiter.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{data.recruiter.email}</p>
-                        </div>
-                        <Badge variant="secondary">
-                          {data.jobs.length} {data.jobs.length === 1 ? 'job' : 'jobs'}
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {data.jobs.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-4">
-                          This recruiter hasn't posted any jobs yet.
-                        </p>
-                      ) : (
-                        <div className="space-y-4 pt-4">
-                          {data.jobs.map((job) => (
-                            <Card key={job.id} className={`border-l-4 ${job.is_published ? 'border-l-green-500' : 'border-l-muted'}`}>
-                              <CardHeader className="pb-3">
-                                <div className="flex items-start justify-between">
-                                  <div>
-                                    <CardTitle className="text-lg">{job.title}</CardTitle>
-                                    <CardDescription>
-                                      {job.company} • {job.location}
-                                    </CardDescription>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {job.is_published ? (
-                                      <Badge className="bg-green-100 text-green-700">
-                                        <Eye className="h-3 w-3 mr-1" />
-                                        Published
-                                      </Badge>
-                                    ) : (
-                                      <Badge variant="secondary">
-                                        <EyeOff className="h-3 w-3 mr-1" />
-                                        Draft
-                                      </Badge>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Total Jobs Posted</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-primary">{stats.totalJobs}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="recruiters">
+            {/* Recruiters and Their Jobs */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recruiters & Their Job Postings</CardTitle>
+                <CardDescription>View all recruiters and the jobs they have posted</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {recruitersData.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">
+                    No recruiters have registered yet.
+                  </p>
+                ) : (
+                  <Accordion type="single" collapsible className="w-full">
+                    {recruitersData.map((data, index) => (
+                      <AccordionItem key={data.recruiter.id} value={`recruiter-${index}`}>
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-4">
+                            <div className="text-left">
+                              <p className="font-semibold">{data.recruiter.full_name}</p>
+                              <p className="text-sm text-muted-foreground">{data.recruiter.email}</p>
+                            </div>
+                            <Badge variant="secondary">
+                              {data.jobs.length} {data.jobs.length === 1 ? 'job' : 'jobs'}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {data.jobs.length === 0 ? (
+                            <p className="text-sm text-muted-foreground py-4">
+                              This recruiter hasn't posted any jobs yet.
+                            </p>
+                          ) : (
+                            <div className="space-y-4 pt-4">
+                              {data.jobs.map((job) => (
+                                <Card key={job.id} className={`border-l-4 ${job.is_published ? 'border-l-green-500' : 'border-l-muted'}`}>
+                                  <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                      <div>
+                                        <CardTitle className="text-lg">{job.title}</CardTitle>
+                                        <CardDescription>
+                                          {job.company} • {job.location}
+                                        </CardDescription>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {job.is_published ? (
+                                          <Badge className="bg-green-100 text-green-700">
+                                            <Eye className="h-3 w-3 mr-1" />
+                                            Published
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="secondary">
+                                            <EyeOff className="h-3 w-3 mr-1" />
+                                            Draft
+                                          </Badge>
+                                        )}
+                                        <Switch
+                                          checked={job.is_published || false}
+                                          onCheckedChange={() => togglePublishJob(job.id, job.is_published)}
+                                        />
+                                      </div>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                      <Badge variant="outline">{job.type}</Badge>
+                                      <Badge variant="outline">{job.category}</Badge>
+                                      {job.salary && <Badge variant="outline">{job.salary}</Badge>}
+                                      {job.visibility && <Badge variant="outline" className="capitalize">{job.visibility}</Badge>}
+                                    </div>
+
+                                    {job.application_url && (
+                                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                                        <ExternalLink className="h-4 w-4" />
+                                        <a
+                                          href={job.application_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="hover:underline truncate max-w-md"
+                                        >
+                                          {job.application_url}
+                                        </a>
+                                      </div>
                                     )}
-                                    <Switch 
-                                      checked={job.is_published || false}
-                                      onCheckedChange={() => togglePublishJob(job.id, job.is_published)}
-                                    />
-                                  </div>
-                                </div>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                  <Badge variant="outline">{job.type}</Badge>
-                                  <Badge variant="outline">{job.category}</Badge>
-                                  {job.salary && <Badge variant="outline">{job.salary}</Badge>}
-                                  {job.visibility && <Badge variant="outline" className="capitalize">{job.visibility}</Badge>}
-                                </div>
-                                
-                                {job.application_url && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                                    <ExternalLink className="h-4 w-4" />
-                                    <a 
-                                      href={job.application_url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="hover:underline truncate max-w-md"
-                                    >
-                                      {job.application_url}
-                                    </a>
-                                  </div>
-                                )}
-                                
-                                <p className="text-xs text-muted-foreground mt-2">
-                                  Posted: {new Date(job.created_at).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                  })}
-                                </p>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
-          </CardContent>
-        </Card>
+
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                      Posted: {new Date(job.created_at).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                      })}
+                                    </p>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="applicants">
+            <ApplicantsList />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

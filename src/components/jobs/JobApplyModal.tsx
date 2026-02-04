@@ -17,6 +17,7 @@ interface JobApplyModalProps {
     id: string;
     title: string;
     company: string;
+    posted_by: string;
   };
   onSuccess?: () => void;
 }
@@ -293,6 +294,19 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       }
 
       console.log('Application submitted successfully!');
+
+      // Notify the job poster (Admin/Recruiter)
+      if (job.posted_by) {
+        console.log('Notifying job poster:', job.posted_by);
+        await createNotification({
+          userId: job.posted_by,
+          type: 'job_application',
+          title: 'New Applicant! ✨',
+          message: `${fullName.trim()} has applied for your role "${job.title}". Check details in your dashboard.`,
+          link: '/dashboard', // Or a specific application review link if available
+        });
+      }
+
       toast({ title: 'Application Submitted! 🎉', description: `Good luck with your application for ${job.title}.` });
       setHasApplied(true);
       onSuccess?.();
