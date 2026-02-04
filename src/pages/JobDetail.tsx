@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, MapPin, Building2, Clock, Briefcase, DollarSign, Users, ExternalLink } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { JobApplyModal } from '@/components/jobs/JobApplyModal';
+import { ArrowLeft, MapPin, Building2, Clock, Briefcase, DollarSign, Users, CheckCircle2 } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -24,7 +26,6 @@ interface Job {
   work_type: string | null;
   team: string | null;
   department: string | null;
-  application_url: string | null;
   created_at: string;
 }
 
