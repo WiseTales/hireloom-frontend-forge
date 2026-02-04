@@ -168,7 +168,6 @@ const RecruiterDashboard = () => {
       type: job.type,
       category: job.category,
       employee_range: job.employee_range || '1-10',
-      application_url: job.application_url || '',
       visibility: job.visibility || 'external',
       is_published: job.is_published ?? true
     });
