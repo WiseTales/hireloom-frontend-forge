@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Trash2, Edit, Eye, EyeOff } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -14,7 +14,6 @@ interface Job {
   type: string;
   category: string;
   employee_range: string;
-  application_url: string | null;
   created_at: string;
   is_published: boolean | null;
   visibility: string | null;
