@@ -9,43 +9,21 @@ import { toast } from 'sonner';
 
 interface ExtractedProfile {
   full_name: string | null;
-  headline: string | null;
+  professional_headline: string | null;
   email: string | null;
   phone: string | null;
   location: string | null;
   total_experience_years: number | null;
-  summary: string | null;
-  experience: {
-    role: string;
-    company: string;
-    location?: string;
-    start_date: string | null;
-    end_date: string | null;
-    currently_working: boolean;
-    responsibilities: string[];
-  }[] | null;
-  education: {
-    degree: string;
-    institution: string;
-    field: string | null;
-    start_date: string | null;
-    end_date: string | null;
-  }[] | null;
+  experience: any[] | null;
+  education: any[] | null;
   skills_technical: string[] | null;
   skills_soft: string[] | null;
-  certifications: {
-    name: string;
-    issuing_organization: string;
-    issue_date: string | null;
-  }[] | null;
-  projects: {
-    title: string;
-    description: string;
-    technologies: string[];
-    url: string | null;
-  }[] | null;
+  tools_and_technologies: string[] | null;
+  certifications: string[] | null;
+  projects: any[] | null;
   portfolio_links: string[] | null;
   languages: string[] | null;
+  summary: string | null;
 }
 
 interface ProfileAutofillProps {
@@ -53,80 +31,51 @@ interface ProfileAutofillProps {
   onDataExtracted: (data: ExtractedProfile) => void;
 }
 
-// Simple PDF text extraction (basic approach)
+// Improved text extraction from file (PDF/DOCX/TXT)
 async function extractTextFromFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
     reader.onload = async (e) => {
       try {
         const content = e.target?.result;
-        
+        if (!content) return resolve('');
+
         if (file.type === 'text/plain') {
           resolve(content as string);
           return;
         }
-        
-        // For PDF/DOCX, we'll extract text using a simple approach
-        // In production, you'd want a proper parser library
-        if (typeof content === 'string') {
-          // Try to extract readable text
-          const text = content
-            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-          resolve(text);
-        } else if (content instanceof ArrayBuffer) {
-          // Convert ArrayBuffer to text, extracting readable portions
+
+        if (content instanceof ArrayBuffer) {
           const decoder = new TextDecoder('utf-8', { fatal: false });
           let text = decoder.decode(content);
-          
-          // For PDFs, try to extract text between stream markers
+
           if (file.type === 'application/pdf') {
-            // Extract text content from PDF streams
-            const textMatches = text.match(/\(([^)]+)\)/g) || [];
-            const streamText = textMatches
-              .map(m => m.slice(1, -1))
-              .filter(t => t.length > 2 && /[a-zA-Z]/.test(t))
-              .join(' ');
-            
-            // Also look for text in BT...ET blocks
-            const btEtMatches = text.match(/BT[\s\S]*?ET/g) || [];
-            const btText = btEtMatches
-              .join(' ')
-              .replace(/\[[^\]]*\]/g, '')
-              .replace(/\d+\.?\d*\s+\d+\.?\d*\s+Td/g, '\n')
-              .replace(/Tj|TJ|Tf|Tm|Tw|Tc|T\*/g, ' ')
-              .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ');
-            
-            text = (streamText + ' ' + btText)
-              .replace(/\s+/g, ' ')
-              .trim();
+            const textParts: string[] = [];
+            const matches = text.match(/\(([^)]+)\)/g);
+            if (matches) {
+              matches.forEach(m => {
+                const inner = m.slice(1, -1).trim();
+                if (inner.length > 1) textParts.push(inner);
+              });
+            }
+            const btEtBlocks = text.match(/BT[\s\S]*?ET/g);
+            if (btEtBlocks) {
+              btEtBlocks.forEach(block => {
+                const cleaned = block.replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, (match) => match.slice(1, -1));
+                textParts.push(cleaned);
+              });
+            }
+            text = textParts.join(' ').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ').replace(/\s+/g, ' ').trim();
           }
-          
-          // Clean up the text
-          text = text
-            .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ')
-            .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-          
           resolve(text);
         } else {
-          reject(new Error('Unable to read file content'));
+          resolve(String(content));
         }
-      } catch (err) {
-        reject(err);
-      }
+      } catch (err) { reject(err); }
     };
-    
     reader.onerror = () => reject(new Error('Failed to read file'));
-    
-    if (file.type === 'text/plain') {
-      reader.readAsText(file);
-    } else {
-      reader.readAsArrayBuffer(file);
-    }
+    if (file.type === 'text/plain') reader.readAsText(file);
+    else reader.readAsArrayBuffer(file);
   });
 }
 
@@ -134,19 +83,15 @@ export const ProfileAutofill = ({ profileId, onDataExtracted }: ProfileAutofillP
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedProfile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-      if (!validTypes.includes(file.type)) {
-        toast.error('Please upload a PDF, DOC, DOCX, or TXT file');
-        return;
-      }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
+        toast.error('File too large. Maximum size is 5MB.');
         return;
       }
       setResumeFile(file);
@@ -157,13 +102,8 @@ export const ProfileAutofill = ({ profileId, onDataExtracted }: ProfileAutofillP
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-      if (!validTypes.includes(file.type)) {
-        toast.error('Please upload a PDF, DOC, DOCX, or TXT file');
-        return;
-      }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
+        toast.error('File too large. Maximum size is 5MB.');
         return;
       }
       setResumeFile(file);
@@ -176,75 +116,66 @@ export const ProfileAutofill = ({ profileId, onDataExtracted }: ProfileAutofillP
       return;
     }
 
+    if (!consentChecked) {
+      toast.error('Please provide consent for AI processing');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Extract text from file
       const resumeText = await extractTextFromFile(resumeFile);
-      
+
       if (resumeText.length < 50) {
-        toast.error('Could not extract enough text from resume. Try a different format or ensure the file is not image-only.');
+        toast.error('Could not extract enough text from resume. Try a different format.');
         setIsLoading(false);
         return;
       }
 
-      console.log('Extracted resume text length:', resumeText.length);
-
-      // Call the edge function
       const { data, error } = await supabase.functions.invoke('profile-autofill', {
-        body: { 
+        body: {
           resumeText,
           linkedinUrl: linkedinUrl.trim() || null
         },
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
-        toast.error('Failed to process resume. Please try again.');
-        return;
-      }
-
-      if (!data.success) {
-        toast.error(data.error || 'Failed to extract profile data');
-        return;
+      if (error || !data.success) {
+        throw new Error(data?.error || 'AI extraction failed');
       }
 
       setExtractedData(data.data);
       onDataExtracted(data.data);
-      toast.success('Profile data extracted successfully! Review and save your profile.');
+      toast.success('Profile auto-filled successfully. Please review before saving.');
 
     } catch (err) {
       console.error('Autofill error:', err);
-      toast.error('An error occurred while processing your resume');
+      toast.error('AI extraction failed. Please fill the form manually.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
+    <Card className="border-2 border-primary/20 bg-primary/5 shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          AI Profile Autofill
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+          Resume + LinkedIn AI Autofill
         </CardTitle>
-        <CardDescription>
-          Upload your resume and optionally add your LinkedIn URL. We'll extract your details automatically to save time.
+        <CardDescription className="text-base text-muted-foreground/80">
+          Save time by automatically populating your profile directly from your files.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Resume Upload */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Resume (Required)
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            1. Upload Resume (Primary)
           </Label>
           <div
-            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-              resumeFile 
-                ? 'border-green-500 bg-green-500/10' 
-                : 'border-muted-foreground/25 hover:border-primary/50'
-            }`}
+            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${resumeFile
+              ? 'border-primary bg-primary/10'
+              : 'border-muted-foreground/20 hover:border-primary/50 bg-background/50'
+              }`}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
@@ -257,73 +188,89 @@ export const ProfileAutofill = ({ profileId, onDataExtracted }: ProfileAutofillP
               className="hidden"
             />
             {resumeFile ? (
-              <div className="flex items-center justify-center gap-2 text-green-600">
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-medium">{resumeFile.name}</span>
+              <div className="space-y-2">
+                <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <p className="font-semibold text-primary">{resumeFile.name}</p>
+                <p className="text-xs text-muted-foreground">File ready for analysis</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Drag & drop your resume here, or click to browse
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Supports PDF, DOC, DOCX, TXT (max 5MB)
-                </p>
+              <div className="space-y-3">
+                <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mx-auto">
+                  <Upload className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-medium">Drop PDF/DOCX or click to browse</p>
+                  <p className="text-xs text-muted-foreground mt-1">Maximum size 5MB</p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* LinkedIn URL */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Linkedin className="h-4 w-4" />
-            LinkedIn Profile URL (Optional)
+        <div className="space-y-3">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            2. LinkedIn (Enhance Profile)
           </Label>
-          <Input
-            placeholder="https://linkedin.com/in/yourprofile"
-            value={linkedinUrl}
-            onChange={(e) => setLinkedinUrl(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Adding your LinkedIn helps enhance your profile with additional data
+          <div className="relative">
+            <Linkedin className="absolute left-3 top-3 h-5 w-5 text-[#0077b5]" />
+            <Input
+              placeholder="https://linkedin.com/in/yourprofile"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              className="pl-10 h-11"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground italic px-1">
+            Optional: AI will cross-reference your LinkedIn to fill missing details.
           </p>
         </div>
 
-        {/* Autofill Button */}
+        <div className="flex items-start gap-3 p-4 bg-background/40 rounded-lg border">
+          <input
+            type="checkbox"
+            id="ai-consent"
+            checked={consentChecked}
+            onChange={(e) => setConsentChecked(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          <Label htmlFor="ai-consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+            I consent to using AI to analyze my resume and LinkedIn text. My data will be processed
+            temporarily and used only to populate this profile.
+          </Label>
+        </div>
+
         <Button
           onClick={handleAutofill}
-          disabled={!resumeFile || isLoading}
-          className="w-full"
+          disabled={!resumeFile || !consentChecked || isLoading}
+          className="w-full h-14 text-lg font-bold shadow-soft group"
           size="lg"
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Analyzing your resume with AI…
+              <Loader2 className="h-6 w-6 mr-3 animate-spin" />
+              Analyzing your resume using AI…
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Sparkles className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
               Autofill profile using AI ✨
             </>
           )}
         </Button>
 
-        {/* Success indicator */}
         {extractedData && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <p className="text-sm text-green-700 dark:text-green-400">
-              Profile data extracted! Switch to other tabs to review and save your experience, education, and skills.
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 animate-in fade-in slide-in-from-top-2">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+            <p className="text-sm text-green-800 dark:text-green-300 font-medium">
+              Profile auto-filled successfully. Please review before saving.
             </p>
           </div>
         )}
 
-        {/* Privacy notice */}
         <p className="text-xs text-muted-foreground text-center">
-          🔒 Your resume is processed securely and never stored permanently.
+          🔒 Privacy Guaranteed: Text is deleted immediately after extraction.
         </p>
       </CardContent>
     </Card>

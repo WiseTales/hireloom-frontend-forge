@@ -187,7 +187,6 @@ serve(async (req) => {
       : mergedContext;
 
     console.log('Context length:', truncatedContext.length);
-    console.log('Preview of extracted text (first 200 chars):', truncatedContext.substring(0, 200));
 
     // Call Gemini API
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -196,37 +195,36 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: 'AI service not configured' });
     }
 
-    const systemPrompt = `You are the world's most precise resume parsing AI.
-Your goal is to extract EVERY possible detail from the provided Resume (primary) and LinkedIn (secondary) text.
+    const systemPrompt = `You are an expert resume and LinkedIn profile parser.
 
-SCHEMA REQUIREMENTS:
-- full_name: string (Required)
-- headline: string (Current role or professional title)
-- email: string (Valid email format)
+Rules:
+- Resume is the primary source of truth
+- LinkedIn is secondary and should only fill missing data
+- CLEAN UP OCR NOISE: Remove random single letters, fix words broken by line breaks, and ignore weird symbols.
+- Do NOT hallucinate
+- If information is missing, return null
+- Output valid JSON only. No markdown fences.`;
+
+    const userPrompt = `Extract the following candidate profile fields:
+
+- full_name: string
+- professional_headline: string
+- email: string
 - phone: string
-- location: string (City, Country)
-- total_experience_years: number (Sum of all relevant experience)
-- summary: string (Professional bio/summary)
-- experience: array of { role, company, location, start_date (YYYY-MM), end_date (YYYY-MM or null), currently_working (boolean), responsibilities (array of strings) }
-- education: array of { degree, institution, field, start_date (YYYY-MM), end_date (YYYY-MM) }
-- skills_technical: array of strings (e.g., React, Python)
-- skills_soft: array of strings (e.g., Leadership, Communication)
-- certifications: array of { name, issuing_organization, issue_date (YYYY-MM) }
-- projects: array of { title, description, technologies (array), url }
-- portfolio_links: array of strings (GitHub, Portfolio, LinkedIn)
+- location: string
+- total_experience_years: number
+- experience: array of { role, company, location, start_date, end_date, currently_working, responsibilities (array) }
+- education: array of { degree, institution, field, graduation_year }
+- skills_technical: array of strings
+- skills_soft: array of strings
+- tools_and_technologies: array of strings
+- certifications: array of strings
+- projects: array de { title, description, technologies (array), url }
+- portfolio_links: array of strings
 - languages: array of strings
+- summary: string
 
-STRICT RULES:
-1. Prefer Resume data over LinkedIn for conflicts.
-2. If the input text is messy/unstructured (common in PDF extractions), look for patterns like 'Name:', 'Experience', dates (e.g., '2020-2022' or 'Jan 20 onwards').
-3. CLEAN UP OCR NOISE: Remove random single letters, fix words that seem broken by line breaks, and ignore CID characters or weird symbols from the PDF stream.
-4. DO NOT hallucinate. If a field is missing, return null.
-5. CLEAN TITLES: Standardize 'SDE 2' to 'Software Development Engineer II' if context allows, or keep as is if unsure.
-6. You MUST return valid JSON.`;
-
-    const userPrompt = `Systematically parse the following candidate data. Be extremely precise and thorough. Find as much info as possible even if hidden in raw text.
-
-DATA TO PARSE:
+Candidate Data:
 ${truncatedContext}`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

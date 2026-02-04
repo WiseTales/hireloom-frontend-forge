@@ -5,15 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { 
-  User, Briefcase, GraduationCap, Wrench, Award, 
-  FolderGit2, Save, Loader2, CheckCircle 
+import {
+  User, Briefcase, GraduationCap, Wrench, Award,
+  FolderGit2, Save, Loader2, CheckCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ExtractedProfile {
   full_name: string | null;
+  professional_headline: string | null;
   headline: string | null;
   email: string | null;
   phone: string | null;
@@ -35,10 +36,12 @@ interface ExtractedProfile {
     field: string | null;
     start_date: string | null;
     end_date: string | null;
+    graduation_year?: string | number | null;
   }[] | null;
   skills_technical: string[] | null;
   skills_soft: string[] | null;
-  certifications: {
+  tools_and_technologies: string[] | null;
+  certifications: string[] | {
     name: string;
     issuing_organization: string;
     issue_date: string | null;
@@ -76,7 +79,7 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
 
   const handleSaveAll = async () => {
     setSaving(true);
-    
+
     try {
       // Update profile
       if (selectedSections.profile) {
@@ -134,11 +137,15 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
       // Add certifications
       if (selectedSections.certifications && data.certifications?.length) {
         for (const cert of data.certifications) {
+          const certName = typeof cert === 'string' ? cert : cert.name;
+          const org = typeof cert === 'string' ? 'Unknown' : cert.issuing_organization;
+          const date = typeof cert === 'string' ? new Date().toISOString().slice(0, 10) : cert.issue_date;
+
           await supabase.from('certifications').insert({
             profile_id: profileId,
-            name: cert.name,
-            issuing_organization: cert.issuing_organization,
-            issue_date: cert.issue_date || new Date().toISOString().slice(0, 10),
+            name: certName,
+            issuing_organization: org,
+            issue_date: date || new Date().toISOString().slice(0, 10),
           });
         }
       }
@@ -156,7 +163,7 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
           });
         }
       }
-      
+
       toast.success('Profile data saved successfully!');
       onSaveComplete();
 
@@ -180,8 +187,8 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
         {/* Profile Info */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Checkbox 
-              id="profile" 
+            <Checkbox
+              id="profile"
               checked={selectedSections.profile}
               onCheckedChange={() => toggleSection('profile')}
             />
@@ -207,8 +214,8 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
           <>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="experience" 
+                <Checkbox
+                  id="experience"
                   checked={selectedSections.experience}
                   onCheckedChange={() => toggleSection('experience')}
                 />
@@ -237,8 +244,8 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
           <>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="education" 
+                <Checkbox
+                  id="education"
                   checked={selectedSections.education}
                   onCheckedChange={() => toggleSection('education')}
                 />
@@ -267,8 +274,8 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
           <>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="skills" 
+                <Checkbox
+                  id="skills"
                   checked={selectedSections.skills}
                   onCheckedChange={() => toggleSection('skills')}
                 />
@@ -297,8 +304,8 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
           <>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="certifications" 
+                <Checkbox
+                  id="certifications"
                   checked={selectedSections.certifications}
                   onCheckedChange={() => toggleSection('certifications')}
                 />
@@ -327,8 +334,8 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
           <>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="projects" 
+                <Checkbox
+                  id="projects"
                   checked={selectedSections.projects}
                   onCheckedChange={() => toggleSection('projects')}
                 />

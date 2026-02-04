@@ -23,11 +23,21 @@ interface JobApplyModalProps {
 
 interface ExtractedProfile {
   full_name: string | null;
+  professional_headline: string | null;
   headline: string | null;
   email: string | null;
   phone: string | null;
   location: string | null;
   total_experience_years: number | null;
+  experience: any[] | null;
+  education: any[] | null;
+  skills_technical: string[] | null;
+  skills_soft: string[] | null;
+  tools_and_technologies: string[] | null;
+  certifications: string[] | null;
+  projects: any[] | null;
+  portfolio_links: string[] | null;
+  languages: string[] | null;
   summary: string | null;
 }
 
@@ -98,6 +108,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [autofilling, setAutofilling] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
   const [step, setStep] = useState<'upload' | 'form'>('upload');
 
   // Form State
@@ -152,6 +163,11 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       return;
     }
 
+    if (!consentChecked) {
+      toast({ title: 'Consent Required', description: 'Please provide consent for AI processing', variant: 'destructive' });
+      return;
+    }
+
     setAutofilling(true);
     try {
       const resumeText = await extractTextFromFile(resumeFile);
@@ -164,7 +180,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       const extracted: ExtractedProfile = data.data;
       setFullName(extracted.full_name || fullName);
       setEmail(extracted.email || email);
-      setHeadline(extracted.headline || headline);
+      setHeadline(extracted.professional_headline || extracted.headline || headline);
       setPhone(extracted.phone || phone);
       setLocation(extracted.location || location);
       if (extracted.summary) setCoverLetter(extracted.summary);
@@ -283,7 +299,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
             <div className="space-y-4">
               <Label className="text-base font-semibold">Step 1: Upload Resume & LinkedIn</Label>
               <div
-                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${resumeFile ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/50 bg-muted/30'
+                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${resumeFile ? 'border-primary bg-primary/10 shadow-inner' : 'border-muted-foreground/20 hover:border-primary/50 bg-muted/30'
                   }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
@@ -301,20 +317,20 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
                     </div>
                     <div>
                       <p className="font-semibold text-primary text-lg">{resumeFile.name}</p>
-                      <p className="text-sm text-muted-foreground">{(resumeFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <p className="text-sm text-muted-foreground">Ready for AI analysis</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setResumeFile(null); }} className="mt-2 text-destructive border-destructive/20 hover:bg-destructive/10">
-                      <X className="h-4 w-4 mr-1" /> Remove and Change
+                      <X className="h-4 w-4 mr-1" /> Change File
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto group-hover:bg-primary/10 transition-colors">
-                      <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto transition-colors">
+                      <Upload className="h-8 w-8 text-muted-foreground" />
                     </div>
                     <div>
                       <p className="text-lg font-semibold">Drop Resume or Click to Upload</p>
-                      <p className="text-sm text-muted-foreground px-4">Our AI will scan your PDF/DOCX and autofill the entire form for you ✨</p>
+                      <p className="text-sm text-muted-foreground px-4">AI Scan supports PDF, DOCX, and TXT (Max 5MB)</p>
                     </div>
                     <div className="flex justify-center gap-2">
                       <span className="text-[10px] px-2 py-1 bg-muted rounded border uppercase font-bold text-muted-foreground">PDF</span>
@@ -337,21 +353,38 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
                   onChange={(e) => setLinkedinUrl(e.target.value)}
                   className="h-12"
                 />
-                <p className="text-xs text-muted-foreground italic">Add your LinkedIn URL to help AI pull more precise experience and skills ✨</p>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-muted/40 rounded-xl border border-muted-foreground/10">
+                <input
+                  type="checkbox"
+                  id="consent"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer font-medium">
+                  I consent to using AI to analyze my resume and LinkedIn details.
+                  My data is processed temporarily only for this application.
+                </Label>
               </div>
             </div>
 
             <div className="flex flex-col gap-3 pt-4">
-              <Button onClick={handleAutofill} disabled={!resumeFile || autofilling} className="w-full h-14 text-lg font-bold bg-primary hover:opacity-95 shadow-lg group">
+              <Button
+                onClick={handleAutofill}
+                disabled={!resumeFile || !consentChecked || autofilling}
+                className="w-full h-14 text-lg font-bold bg-primary hover:opacity-95 shadow-lg shadow-primary/20"
+              >
                 {autofilling ? (
                   <>
                     <Loader2 className="h-6 w-6 mr-3 animate-spin" />
-                    Analyzing your profile...
+                    Analyzing your resume using AI…
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-6 w-6 mr-3 text-yellow-300 animate-pulse" />
-                    Autofill with AI ✨
+                    Autofill using AI ✨
                   </>
                 )}
               </Button>
