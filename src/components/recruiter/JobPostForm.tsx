@@ -347,7 +347,6 @@ export const JobPostForm = ({
             </div>
 
           </div>
-        </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Job Description *</Label>
