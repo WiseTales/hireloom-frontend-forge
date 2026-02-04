@@ -186,20 +186,25 @@ const JobDetail = () => {
                 <CardTitle className="text-lg">Apply for this job</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {job.application_url ? (
+                {hasApplied ? (
+                  <div className="flex flex-col items-center py-4">
+                    <div className="rounded-full bg-green-100 p-2 mb-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    </div>
+                    <p className="font-medium text-center">Application Submitted</p>
+                    <p className="text-xs text-muted-foreground text-center mt-1">
+                      You have already applied for this position.
+                    </p>
+                  </div>
+                ) : (
                   <>
-                    <Button className="w-full gap-2" onClick={handleApplyClick}>
-                      Apply on Company Website
-                      <ExternalLink className="h-4 w-4" />
+                    <Button className="w-full" onClick={handleApplyClick}>
+                      Apply Now
                     </Button>
                     <p className="text-xs text-muted-foreground text-center">
-                      You'll be redirected to the employer's official website. HireLoom does not process applications.
+                      Your profile and resume will be shared with the employer.
                     </p>
                   </>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Application link not available. Please check back later or contact the employer directly.
-                  </p>
                 )}
               </CardContent>
             </Card>

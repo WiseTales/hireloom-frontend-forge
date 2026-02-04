@@ -102,20 +102,6 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
             </p>
             <p className="text-sm line-clamp-3">{job.description}</p>
             
-            {job.application_url && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                <ExternalLink className="h-4 w-4" />
-                <a 
-                  href={job.application_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:underline truncate max-w-md"
-                >
-                  {job.application_url}
-                </a>
-              </div>
-            )}
-            
             <p className="text-xs text-muted-foreground mt-4">
               Posted: {new Date(job.created_at).toLocaleDateString()}
             </p>
