@@ -189,9 +189,9 @@ serve(async (req) => {
     console.log('Context length:', truncatedContext.length);
 
     // Call Gemini API
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY not configured');
       return jsonResponse({ success: false, error: 'AI service not configured' });
     }
 
@@ -227,48 +227,33 @@ Rules:
 Candidate Data:
 ${truncatedContext}`;
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Using Google's official Gemini endpoint
+    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-1.5-pro',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0,
-        response_format: { type: 'json_object' }
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          response_mime_type: "application/json",
+          temperature: 0,
+        }
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error('AI API error:', aiResponse.status, errorText);
-
-      if (aiResponse.status === 429) {
-        return jsonResponse({
-          success: false,
-          error: 'AI service rate limit exceeded. Please try again in a moment.',
-        });
-      }
-      if (aiResponse.status === 402) {
-        return jsonResponse({
-          success: false,
-          error: 'AI service credits exhausted. Please contact support.',
-        });
-      }
-
       return jsonResponse({
         success: false,
-        error: 'AI extraction failed. Please try again.',
+        error: 'AI extraction failed. Please check your API key and try again.',
       });
     }
 
     const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content;
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!content) {
       return jsonResponse({ success: false, error: 'AI returned empty response' });
