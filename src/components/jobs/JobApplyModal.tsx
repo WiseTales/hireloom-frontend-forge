@@ -202,42 +202,54 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       return;
     }
 
+    console.log('Starting submission...', { fullName, email, phone, location, headline, hasResume: !!resumeFile, job_id: job.id });
     setLoading(true);
     try {
-      let resumeUrl = null;
+      let resumeUrl: string | null = null;
       if (resumeFile) {
+        console.log('Uploading resume...', resumeFile.name);
         const fileExt = resumeFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = `${Math.random()}-${Date.now()}.${fileExt}`;
         const filePath = `resumes/${fileName}`;
-        const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, resumeFile);
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('resumes').getPublicUrl(filePath);
-        resumeUrl = publicUrl;
+
+        const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, resumeFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+        if (uploadError) {
+          console.error('Resume upload failed:', uploadError);
+          throw new Error(`Resume upload failed: ${uploadError.message}`);
+        }
+
+        const { data } = supabase.storage.from('resumes').getPublicUrl(filePath);
+        resumeUrl = data.publicUrl;
+        console.log('Resume uploaded successfully. URL:', resumeUrl);
       }
 
-
-
       if (user) {
-        // Authenticated user application
+        console.log('Inserting into job_applications for user:', user.id);
         const { error: appError } = await supabase.from('job_applications').insert({
           job_id: job.id,
           user_id: user.id,
-          applicant_name: fullName,
-          applicant_email: email,
+          applicant_name: fullName.trim(),
+          applicant_email: email.trim(),
           status: 'applied',
         });
 
-        if (appError) throw appError;
-
-        // Sync uploaded resume and headline to profile for logged in users
-        if (resumeUrl || headline || fullName) {
-          await supabase.from('profiles').update({
-            resume_url: resumeUrl || undefined,
-            headline: headline || undefined,
-            full_name: fullName || undefined,
-            bio: coverLetter || undefined,
-          }).eq('id', user.id);
+        if (appError) {
+          console.error('Auth application insert error:', appError);
+          throw appError;
         }
+
+        // Sync to profile
+        console.log('Syncing data to profile...');
+        await supabase.from('profiles').update({
+          resume_url: resumeUrl || undefined,
+          headline: headline.trim() || undefined,
+          full_name: fullName.trim() || undefined,
+          bio: coverLetter.trim() || undefined,
+        }).eq('id', user.id);
 
         await createNotification({
           userId: user.id,
@@ -247,42 +259,50 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
           link: '/applied',
         });
       } else {
-        // Guest user application
+        console.log('Inserting into public_applications for guest');
         if (!resumeUrl) {
           toast({
             title: 'Resume Required',
-            description: 'Please go back and upload your resume. Guest applications require a document.',
+            description: 'Guest applications require a resume upload. Please go back and select a file.',
             variant: 'destructive'
           });
           setLoading(false);
           return;
         }
 
-        const { error: publicError } = await supabase.from('public_applications').insert({
+        const insertData = {
           job_id: job.id,
-          full_name: fullName,
-          email: email,
-          cover_letter: coverLetter,
+          full_name: fullName.trim(),
+          email: email.trim(),
+          cover_letter: coverLetter.trim() || null,
           status: 'applied',
           resume_url: resumeUrl,
-          linkedin_url: linkedinUrl || null,
-          phone: phone || null,
-          current_location: location || null,
-          current_company: headline || null,
-        });
-        if (publicError) throw publicError;
+          linkedin_url: linkedinUrl.trim() || null,
+          phone: phone.trim() || null,
+          current_location: location.trim() || null,
+          current_company: headline.trim() || null,
+        };
+        console.log('Public insert data:', insertData);
+
+        const { error: publicError } = await supabase.from('public_applications').insert(insertData);
+
+        if (publicError) {
+          console.error('Guest application insert error:', publicError);
+          throw publicError;
+        }
       }
 
+      console.log('Application submitted successfully!');
       toast({ title: 'Application Submitted! 🎉', description: `Good luck with your application for ${job.title}.` });
       setHasApplied(true);
       onSuccess?.();
       setTimeout(() => onOpenChange(false), 2000);
     } catch (error: any) {
-      console.error('Submission error full details:', error);
-      const errorMessage = error.message || error.details || 'Unknown database error';
+      console.error('SUBMISSION_CRITICAL_ERROR:', error);
+      const errorMessage = error.message || error.details || JSON.stringify(error);
       toast({
-        title: 'Submission Error',
-        description: `Failed to submit: ${errorMessage}`,
+        title: 'Submission Failed',
+        description: `Error: ${errorMessage}. Please check your connection and try again.`,
         variant: 'destructive'
       });
     } finally {
