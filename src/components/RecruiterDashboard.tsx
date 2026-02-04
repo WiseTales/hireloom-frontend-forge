@@ -72,15 +72,6 @@ const RecruiterDashboard = () => {
     e.preventDefault();
     if (!user) return;
 
-    if (!formData.application_url) {
-      toast({
-        title: 'Application URL Required',
-        description: 'Please provide the official careers/application page link',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setSubmitting(true);
 
     if (editingJob) {
@@ -95,7 +86,6 @@ const RecruiterDashboard = () => {
           type: formData.type,
           category: formData.category,
           employee_range: formData.employee_range,
-          application_url: formData.application_url,
           visibility: formData.visibility as 'internal' | 'external',
           is_published: formData.is_published
         })
