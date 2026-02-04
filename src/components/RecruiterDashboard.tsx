@@ -199,7 +199,6 @@ const RecruiterDashboard = () => {
       type: 'Full-time',
       category: 'IT/Tech',
       employee_range: '1-10',
-      application_url: '',
       visibility: 'external',
       is_published: true
     });

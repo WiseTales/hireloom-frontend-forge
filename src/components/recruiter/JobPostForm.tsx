@@ -346,22 +346,8 @@ export const JobPostForm = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="application_url">Application Page URL *</Label>
-              <Input
-                id="application_url"
-                type="url"
-                required
-                value={formData.application_url}
-                onChange={(e) => setFormData({ ...formData, application_url: e.target.value })}
-                placeholder="https://yourcompany.com/careers/apply"
-                className={getFieldClassName('application_url')}
-              />
-              <p className="text-xs text-muted-foreground">
-                Applicants will be redirected to this URL to apply
-              </p>
-            </div>
           </div>
+        </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Job Description *</Label>
