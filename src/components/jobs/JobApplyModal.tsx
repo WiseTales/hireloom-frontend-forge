@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, ChangeEvent, DragEvent } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -146,7 +146,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -215,25 +215,29 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
         resumeUrl = publicUrl;
       }
 
-      const applicationData = {
-        job_id: job.id,
-        applicant_name: fullName,
-        applicant_email: email,
-        cover_letter: coverLetter,
-        status: 'applied',
-        resume_url: resumeUrl,
-        linkedin_url: linkedinUrl || null,
-        phone: phone || null,
-        current_location: location || null,
-        current_company: headline || null, // headline often contains company
-      };
+
 
       if (user) {
-        const { error } = await supabase.from('job_applications').insert({
-          ...applicationData,
-          user_id: user.id
+        // Authenticated user application
+        const { error: appError } = await supabase.from('job_applications').insert({
+          job_id: job.id,
+          user_id: user.id,
+          applicant_name: fullName,
+          applicant_email: email,
+          status: 'applied',
         });
-        if (error) throw error;
+
+        if (appError) throw appError;
+
+        // Sync uploaded resume and headline to profile for logged in users
+        if (resumeUrl || headline || fullName) {
+          await supabase.from('profiles').update({
+            resume_url: resumeUrl || undefined,
+            headline: headline || undefined,
+            full_name: fullName || undefined,
+            bio: coverLetter || undefined,
+          }).eq('id', user.id);
+        }
 
         await createNotification({
           userId: user.id,
@@ -243,21 +247,44 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
           link: '/applied',
         });
       } else {
-        const { error } = await supabase.from('public_applications').insert({
-          ...applicationData,
+        // Guest user application
+        if (!resumeUrl) {
+          toast({
+            title: 'Resume Required',
+            description: 'Please go back and upload your resume. Guest applications require a document.',
+            variant: 'destructive'
+          });
+          setLoading(false);
+          return;
+        }
+
+        const { error: publicError } = await supabase.from('public_applications').insert({
+          job_id: job.id,
           full_name: fullName,
           email: email,
+          cover_letter: coverLetter,
+          status: 'applied',
+          resume_url: resumeUrl,
+          linkedin_url: linkedinUrl || null,
+          phone: phone || null,
+          current_location: location || null,
+          current_company: headline || null,
         });
-        if (error) throw error;
+        if (publicError) throw publicError;
       }
 
       toast({ title: 'Application Submitted! 🎉', description: `Good luck with your application for ${job.title}.` });
       setHasApplied(true);
       onSuccess?.();
       setTimeout(() => onOpenChange(false), 2000);
-    } catch (error) {
-      console.error('Submission error:', error);
-      toast({ title: 'Error', description: 'Failed to submit application. Please try again.', variant: 'destructive' });
+    } catch (error: any) {
+      console.error('Submission error full details:', error);
+      const errorMessage = error.message || error.details || 'Unknown database error';
+      toast({
+        title: 'Submission Error',
+        description: `Failed to submit: ${errorMessage}`,
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
@@ -435,22 +462,40 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
             </div>
 
             <div className="flex flex-col gap-4 p-4 bg-muted/40 rounded-xl border border-muted-foreground/10">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Original Document</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Resume Document</h4>
+                {!resumeFile && <span className="text-[10px] bg-destructive/10 text-destructive px-2 py-0.5 rounded font-bold">REQUIRED</span>}
+              </div>
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center">
-                    <FileText className="h-6 w-6 text-primary" />
+                  <div className={`h-10 w-10 ${resumeFile ? 'bg-primary/10' : 'bg-muted'} rounded flex items-center justify-center`}>
+                    <FileText className={`h-6 w-6 ${resumeFile ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold truncate max-w-[300px]">{resumeFile?.name || 'Manual entry'}</p>
-                    <p className="text-xs text-muted-foreground italic">Attached to application</p>
+                    {resumeFile ? (
+                      <>
+                        <p className="text-sm font-semibold truncate max-w-[300px]">{resumeFile.name}</p>
+                        <p className="text-xs text-muted-foreground italic">Attached to application</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-semibold text-muted-foreground">No resume uploaded</p>
+                        <p className="text-xs text-destructive italic">Required for submission</p>
+                      </>
+                    )}
                   </div>
                 </div>
-                {resumeFile && (
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => { setResumeFile(null); setStep('upload'); }}>
-                    Replace
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={resumeFile ? "text-muted-foreground hover:text-destructive" : "bg-primary text-primary-foreground hover:bg-primary/90"}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {resumeFile ? 'Replace' : 'Upload Resume'}
                   </Button>
-                )}
+                </div>
               </div>
             </div>
 
