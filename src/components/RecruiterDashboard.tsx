@@ -16,7 +16,6 @@ interface Job {
   type: string;
   category: string;
   employee_range: string;
-  application_url: string | null;
   created_at: string;
   is_published: boolean | null;
   visibility: string | null;
@@ -39,7 +38,6 @@ const RecruiterDashboard = () => {
     type: 'Full-time',
     category: 'IT/Tech',
     employee_range: '1-10',
-    application_url: '',
     visibility: 'external',
     is_published: true
   });
@@ -74,15 +72,6 @@ const RecruiterDashboard = () => {
     e.preventDefault();
     if (!user) return;
 
-    if (!formData.application_url) {
-      toast({
-        title: 'Application URL Required',
-        description: 'Please provide the official careers/application page link',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setSubmitting(true);
 
     if (editingJob) {
@@ -97,7 +86,6 @@ const RecruiterDashboard = () => {
           type: formData.type,
           category: formData.category,
           employee_range: formData.employee_range,
-          application_url: formData.application_url,
           visibility: formData.visibility as 'internal' | 'external',
           is_published: formData.is_published
         })
@@ -180,7 +168,6 @@ const RecruiterDashboard = () => {
       type: job.type,
       category: job.category,
       employee_range: job.employee_range || '1-10',
-      application_url: job.application_url || '',
       visibility: job.visibility || 'external',
       is_published: job.is_published ?? true
     });
@@ -212,7 +199,6 @@ const RecruiterDashboard = () => {
       type: 'Full-time',
       category: 'IT/Tech',
       employee_range: '1-10',
-      application_url: '',
       visibility: 'external',
       is_published: true
     });

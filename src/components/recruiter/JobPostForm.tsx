@@ -18,7 +18,6 @@ interface JobFormData {
   type: string;
   category: string;
   employee_range: string;
-  application_url: string;
   visibility: string;
   is_published: boolean;
 }
@@ -94,10 +93,6 @@ export const JobPostForm = ({
       if (extracted.salary) {
         newFormData.salary = extracted.salary;
         filledFields.add('salary');
-      }
-      if (extracted.apply_url) {
-        newFormData.application_url = extracted.apply_url;
-        filledFields.add('application_url');
       }
 
       // Build comprehensive description
@@ -351,21 +346,6 @@ export const JobPostForm = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="application_url">Application Page URL *</Label>
-              <Input
-                id="application_url"
-                type="url"
-                required
-                value={formData.application_url}
-                onChange={(e) => setFormData({ ...formData, application_url: e.target.value })}
-                placeholder="https://yourcompany.com/careers/apply"
-                className={getFieldClassName('application_url')}
-              />
-              <p className="text-xs text-muted-foreground">
-                Applicants will be redirected to this URL to apply
-              </p>
-            </div>
           </div>
 
           <div className="space-y-2">

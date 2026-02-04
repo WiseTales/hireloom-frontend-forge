@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, MapPin, Building2, Clock, Briefcase, DollarSign, Users, ExternalLink } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { JobApplyModal } from '@/components/jobs/JobApplyModal';
+import { ArrowLeft, MapPin, Building2, Clock, Briefcase, DollarSign, Users, CheckCircle2 } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -24,20 +26,29 @@ interface Job {
   work_type: string | null;
   team: string | null;
   department: string | null;
-  application_url: string | null;
   created_at: string;
 }
 
 const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchJob();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (user && id) {
+      checkApplicationStatus();
+    }
+  }, [user, id]);
 
   const fetchJob = async () => {
     try {
@@ -56,15 +67,30 @@ const JobDetail = () => {
     }
   };
 
+  const checkApplicationStatus = async () => {
+    if (!user || !id) return;
+    
+    const { data } = await supabase
+      .from('job_applications')
+      .select('id')
+      .eq('job_id', id)
+      .eq('user_id', user.id)
+      .single();
+    
+    setHasApplied(!!data);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   const handleApplyClick = () => {
-    if (job?.application_url) {
-      window.open(job.application_url, '_blank', 'noopener,noreferrer');
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/jobs/${id}` } });
+      return;
     }
+    setShowApplyModal(true);
   };
 
   if (loading) {
@@ -160,20 +186,25 @@ const JobDetail = () => {
                 <CardTitle className="text-lg">Apply for this job</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {job.application_url ? (
+                {hasApplied ? (
+                  <div className="flex flex-col items-center py-4">
+                    <div className="rounded-full bg-primary/10 p-2 mb-3">
+                      <CheckCircle2 className="h-6 w-6 text-primary" />
+                    </div>
+                    <p className="font-medium text-center">Application Submitted</p>
+                    <p className="text-xs text-muted-foreground text-center mt-1">
+                      You have already applied for this position.
+                    </p>
+                  </div>
+                ) : (
                   <>
-                    <Button className="w-full gap-2" onClick={handleApplyClick}>
-                      Apply on Company Website
-                      <ExternalLink className="h-4 w-4" />
+                    <Button className="w-full" onClick={handleApplyClick}>
+                      Apply Now
                     </Button>
                     <p className="text-xs text-muted-foreground text-center">
-                      You'll be redirected to the employer's official website. HireLoom does not process applications.
+                      Your profile and resume will be shared with the employer.
                     </p>
                   </>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Application link not available. Please check back later or contact the employer directly.
-                  </p>
                 )}
               </CardContent>
             </Card>
@@ -227,6 +258,16 @@ const JobDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Apply Modal */}
+      {job && (
+        <JobApplyModal
+          open={showApplyModal}
+          onOpenChange={setShowApplyModal}
+          job={{ id: job.id, title: job.title, company: job.company }}
+          onSuccess={() => setHasApplied(true)}
+        />
+      )}
     </div>
   );
 };
