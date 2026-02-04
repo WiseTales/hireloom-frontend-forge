@@ -94,10 +94,6 @@ export const JobPostForm = ({
         newFormData.salary = extracted.salary;
         filledFields.add('salary');
       }
-      if (extracted.apply_url) {
-        newFormData.application_url = extracted.apply_url;
-        filledFields.add('application_url');
-      }
 
       // Build comprehensive description
       let description = '';
