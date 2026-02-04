@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Briefcase, Building2, Users, Shield, ArrowRight, Search, MapPin, Clock, 
+import {
+  Briefcase, Building2, Users, Shield, ArrowRight, Search, MapPin, Clock,
   DollarSign, TrendingUp, Sparkles, ChevronRight, Filter, X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -60,7 +60,7 @@ const Landing = () => {
   // Real-time letter-by-letter search (no debounce)
   const filteredJobs = jobs.filter(job => {
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       job.title.toLowerCase().includes(searchLower) ||
       job.company.toLowerCase().includes(searchLower) ||
       job.category.toLowerCase().includes(searchLower) ||
@@ -73,7 +73,7 @@ const Landing = () => {
 
   // Top 10 trending jobs (latest)
   const trendingJobs = jobs.slice(0, 10);
-  
+
   // Jobs for search section (only when searching/filtering or showing all)
   const isSearching = searchTerm || locationFilter || departmentFilter || workTypeFilter;
   const displayedJobs = isSearching || showAllJobs ? filteredJobs : [];
@@ -121,41 +121,41 @@ const Landing = () => {
             <Sparkles className="h-4 w-4 text-white" />
             <span className="text-sm text-white/90">Trusted by 500+ Companies</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-primary-foreground animate-fade-in stagger-1">
             Enterprise Hiring
             <br />
             <span className="relative">
               Platform
               <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
-                <path d="M2 10C50 4 150 4 298 10" stroke="rgba(255,255,255,0.4)" strokeWidth="3" strokeLinecap="round"/>
+                <path d="M2 10C50 4 150 4 298 10" stroke="rgba(255,255,255,0.4)" strokeWidth="3" strokeLinecap="round" />
               </svg>
             </span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl mb-10 text-primary-foreground/90 max-w-2xl mx-auto animate-fade-in stagger-2">
             Streamline your recruitment process with HireLoom's powerful B2B hiring solution
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6 animate-fade-in stagger-3">
-            <Link to="/signup">
-              <Button size="lg" variant="secondary" className="text-lg px-8 group hover-lift">
-                Get Started Free
+            <Link to="/jobs">
+              <Button size="lg" className="text-lg px-8 py-7 bg-white text-primary hover:bg-white/90 group hover-lift border-0 shadow-lg">
+                Browse Jobs
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <a href="#trending-jobs">
-              <Button size="lg" variant="outline" className="text-lg px-8 bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm">
-                View Trending Jobs
+            <Link to="/signup">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-7 bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm">
+                Create Company Account
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
 
         {/* Wave decoration */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 120" fill="none" className="w-full">
-            <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V120Z" fill="hsl(var(--background))"/>
+            <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V120Z" fill="hsl(var(--background))" />
           </svg>
         </div>
       </section>
@@ -194,8 +194,8 @@ const Landing = () => {
             ) : (
               <div className="grid md:grid-cols-2 gap-6">
                 {trendingJobs.map((job, index) => (
-                  <Card 
-                    key={job.id} 
+                  <Card
+                    key={job.id}
                     className="group hover-lift card-shine border-border/50 animate-fade-in"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
@@ -300,7 +300,7 @@ const Landing = () => {
                     className="pl-12 h-14 text-lg rounded-xl border-2 focus:border-primary transition-colors"
                   />
                   {searchTerm && (
-                    <button 
+                    <button
                       onClick={() => setSearchTerm('')}
                       className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors"
                     >
@@ -390,8 +390,8 @@ const Landing = () => {
               ) : (
                 <div className="space-y-4">
                   {filteredJobs.map((job, index) => (
-                    <Card 
-                      key={job.id} 
+                    <Card
+                      key={job.id}
                       className="hover-lift card-shine animate-fade-in"
                       style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
                     >
@@ -475,7 +475,7 @@ const Landing = () => {
               { icon: Building2, title: 'Company Branding', desc: 'Showcase your company with a professional careers page that attracts top talent' },
               { icon: Shield, title: 'RBAC Security', desc: 'Role-based access control ensures the right people have access to the right data' },
             ].map((feature, index) => (
-              <div 
+              <div
                 key={feature.title}
                 className="text-center p-6 rounded-xl border bg-card hover-lift card-shine animate-fade-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
@@ -497,15 +497,15 @@ const Landing = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 animate-fade-in">
             How It Works
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { num: 1, title: 'Create Company Account', desc: 'Sign up with your company email to get started in minutes' },
               { num: 2, title: 'Post Jobs & Build Team', desc: 'Create detailed job listings and invite team members with appropriate roles' },
               { num: 3, title: 'Receive Applications', desc: 'Candidates apply directly with their resumes - no account required' },
             ].map((step, index) => (
-              <div 
-                key={step.num} 
+              <div
+                key={step.num}
                 className="text-center animate-fade-in"
                 style={{ animationDelay: `${index * 0.15}s` }}
               >

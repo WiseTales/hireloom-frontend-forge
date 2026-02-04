@@ -32,23 +32,12 @@ export const JobCard = ({ job }: JobCardProps) => {
       .eq('user_id', user?.id)
       .eq('job_id', job.id)
       .single();
-    
+
     setIsSaved(!!saved);
   };
 
   const handleApply = () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: '/dashboard', jobId: job.id } });
-      return;
-    }
-
-    const appliedJobs = JSON.parse(localStorage.getItem('hireloom_applied_jobs') || '[]');
-    if (!appliedJobs.includes(job.id)) {
-      appliedJobs.push(job.id);
-      localStorage.setItem('hireloom_applied_jobs', JSON.stringify(appliedJobs));
-      setIsApplied(true);
-      toast.success('Application submitted successfully!');
-    }
+    navigate(`/jobs/${job.id}`);
   };
 
   const handleSave = async () => {
@@ -69,7 +58,7 @@ export const JobCard = ({ job }: JobCardProps) => {
       await supabase
         .from('saved_jobs')
         .insert({ user_id: user.id, job_id: job.id });
-      
+
       await createNotification({
         userId: user.id,
         type: 'job_saved',
@@ -77,7 +66,7 @@ export const JobCard = ({ job }: JobCardProps) => {
         message: `You saved ${job.title} at ${job.company}`,
         link: '/saved',
       });
-      
+
       setIsSaved(true);
       toast.success('Job saved successfully!');
     }
@@ -123,8 +112,8 @@ export const JobCard = ({ job }: JobCardProps) => {
       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{job.description}</p>
 
       <div className="flex gap-2">
-        <Button 
-          className="flex-1" 
+        <Button
+          className="flex-1"
           onClick={handleApply}
           disabled={isApplied}
         >

@@ -69,14 +69,14 @@ const JobDetail = () => {
 
   const checkApplicationStatus = async () => {
     if (!user || !id) return;
-    
+
     const { data } = await supabase
       .from('job_applications')
       .select('id')
       .eq('job_id', id)
       .eq('user_id', user.id)
       .single();
-    
+
     setHasApplied(!!data);
   };
 
@@ -86,10 +86,6 @@ const JobDetail = () => {
   };
 
   const handleApplyClick = () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/jobs/${id}` } });
-      return;
-    }
     setShowApplyModal(true);
   };
 
@@ -116,13 +112,10 @@ const JobDetail = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/jobs" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+        <div className="container mx-auto px-4 py-4">
+          <Link to="/jobs" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors w-fit">
             <ArrowLeft className="h-4 w-4" />
             Back to all jobs
-          </Link>
-          <Link to="/login">
-            <Button variant="outline" size="sm">Sign In</Button>
           </Link>
         </div>
       </header>

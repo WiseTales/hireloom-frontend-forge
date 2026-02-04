@@ -52,14 +52,14 @@ const JobBoard = () => {
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(search.toLowerCase()) ||
-                         job.company.toLowerCase().includes(search.toLowerCase());
-    const matchesLocation = !locationFilter || 
-                           job.location.toLowerCase().includes(locationFilter.toLowerCase());
+      job.company.toLowerCase().includes(search.toLowerCase());
+    const matchesLocation = !locationFilter ||
+      job.location.toLowerCase().includes(locationFilter.toLowerCase());
     const matchesDepartment = departmentFilter === 'all' || job.category === departmentFilter;
-    const matchesWorkType = workTypeFilter === 'all' || 
-                           (workTypeFilter === 'remote' && job.is_remote) ||
-                           (workTypeFilter === 'onsite' && !job.is_remote);
-    
+    const matchesWorkType = workTypeFilter === 'all' ||
+      (workTypeFilter === 'remote' && job.is_remote) ||
+      (workTypeFilter === 'onsite' && !job.is_remote);
+
     return matchesSearch && matchesLocation && matchesDepartment && matchesWorkType;
   });
 
@@ -73,21 +73,6 @@ const JobBoard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">HL</span>
-            </div>
-            <span className="font-semibold text-foreground">HireLoom Careers</span>
-          </Link>
-          <Link to="/login">
-            <Button variant="outline" size="sm">Sign In</Button>
-          </Link>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="gradient-hero text-primary-foreground py-16">
         <div className="container mx-auto px-4 text-center">

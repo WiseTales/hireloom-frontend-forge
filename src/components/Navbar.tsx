@@ -55,13 +55,16 @@ export const Navbar = () => {
     setMobileMenuOpen(false);
   };
 
-  const navItems = isAuthenticated ? [
-    { label: 'Dashboard', href: '/dashboard', icon: Briefcase },
-    { label: 'Interviews', href: '/interviews', icon: Calendar },
-    { label: 'Referrals', href: '/referrals', icon: UserPlus },
-    { label: 'Messages', href: '/messages', icon: MessageSquare },
-    ...(userRole === 'admin' ? [{ label: 'Moderation', href: '/moderation', icon: Shield }] : []),
-  ] : [];
+  const navItems = [
+    { label: 'Find Jobs', href: '/jobs', icon: Briefcase },
+    ...(isAuthenticated ? [
+      { label: 'Dashboard', href: '/dashboard', icon: Briefcase }, // This is company dashboard usually, but keeping it for consistency
+      { label: 'Interviews', href: '/interviews', icon: Calendar },
+      { label: 'Referrals', href: '/referrals', icon: UserPlus },
+      { label: 'Messages', href: '/messages', icon: MessageSquare },
+      ...(userRole === 'admin' ? [{ label: 'Moderation', href: '/moderation', icon: Shield }] : []),
+    ] : []),
+  ];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-soft">
