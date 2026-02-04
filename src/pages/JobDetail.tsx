@@ -258,6 +258,16 @@ const JobDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Apply Modal */}
+      {job && (
+        <JobApplyModal
+          open={showApplyModal}
+          onOpenChange={setShowApplyModal}
+          job={{ id: job.id, title: job.title, company: job.company }}
+          onSuccess={() => setHasApplied(true)}
+        />
+      )}
     </div>
   );
 };
