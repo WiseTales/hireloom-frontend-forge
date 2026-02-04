@@ -16,7 +16,6 @@ interface Job {
   type: string;
   category: string;
   employee_range: string;
-  application_url: string | null;
   created_at: string;
   is_published: boolean | null;
   visibility: string | null;
@@ -39,7 +38,6 @@ const RecruiterDashboard = () => {
     type: 'Full-time',
     category: 'IT/Tech',
     employee_range: '1-10',
-    application_url: '',
     visibility: 'external',
     is_published: true
   });
