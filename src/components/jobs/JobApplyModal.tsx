@@ -107,6 +107,8 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
 
   const [hasApplied, setHasApplied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,6 +165,8 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       setFullName(extracted.full_name || fullName);
       setEmail(extracted.email || email);
       setHeadline(extracted.headline || headline);
+      setPhone(extracted.phone || phone);
+      setLocation(extracted.location || location);
       if (extracted.summary) setCoverLetter(extracted.summary);
 
       setStep('form');
@@ -203,10 +207,12 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
         status: 'applied',
         resume_url: resumeUrl,
         linkedin_url: linkedinUrl || null,
+        phone: phone || null,
+        current_location: location || null,
+        current_company: headline || null, // headline often contains company
       };
 
       if (user) {
-        // Authenticated application
         const { error } = await supabase.from('job_applications').insert({
           ...applicationData,
           user_id: user.id
@@ -221,10 +227,9 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
           link: '/applied',
         });
       } else {
-        // Guest application using public_applications table
         const { error } = await supabase.from('public_applications').insert({
           ...applicationData,
-          full_name: fullName, // mapping different field names in public_applications
+          full_name: fullName,
           email: email,
         });
         if (error) throw error;
@@ -263,12 +268,12 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg scrollbar-hide max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl scrollbar-hide max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-start">
             <div>
-              <DialogTitle>Apply for {job.title}</DialogTitle>
-              <DialogDescription>at {job.company}</DialogDescription>
+              <DialogTitle className="text-2xl">Apply for {job.title}</DialogTitle>
+              <DialogDescription className="text-lg">at {job.company}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -276,9 +281,9 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
         {step === 'upload' ? (
           <div className="space-y-6 py-4">
             <div className="space-y-4">
-              <Label className="text-sm font-medium">Step 1: Upload Resume & LinkedIn</Label>
+              <Label className="text-base font-semibold">Step 1: Upload Resume & LinkedIn</Label>
               <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${resumeFile ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/50 bg-muted/30'
+                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${resumeFile ? 'border-primary bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/50 bg-muted/30'
                   }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
@@ -290,94 +295,136 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
               >
                 <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileChange} className="hidden" />
                 {resumeFile ? (
-                  <div className="space-y-2">
-                    <FileText className="h-10 w-10 mx-auto text-primary" />
-                    <p className="font-medium text-primary">{resumeFile.name}</p>
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setResumeFile(null); }}>
-                      <X className="h-4 w-4 mr-1" /> Remove
+                  <div className="space-y-3">
+                    <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                      <FileText className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-primary text-lg">{resumeFile.name}</p>
+                      <p className="text-sm text-muted-foreground">{(resumeFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setResumeFile(null); }} className="mt-2 text-destructive border-destructive/20 hover:bg-destructive/10">
+                      <X className="h-4 w-4 mr-1" /> Remove and Change
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <Upload className="h-10 w-10 mx-auto text-muted-foreground" />
-                    <p className="text-sm font-medium">Drop Resume or Click to Upload</p>
-                    <p className="text-xs text-muted-foreground">PDF, DOCX, or TXT (Max 5MB)</p>
+                  <div className="space-y-4">
+                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto group-hover:bg-primary/10 transition-colors">
+                      <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold">Drop Resume or Click to Upload</p>
+                      <p className="text-sm text-muted-foreground px-4">Our AI will scan your PDF/DOCX and autofill the entire form for you ✨</p>
+                    </div>
+                    <div className="flex justify-center gap-2">
+                      <span className="text-[10px] px-2 py-1 bg-muted rounded border uppercase font-bold text-muted-foreground">PDF</span>
+                      <span className="text-[10px] px-2 py-1 bg-muted rounded border uppercase font-bold text-muted-foreground">DOCX</span>
+                      <span className="text-[10px] px-2 py-1 bg-muted rounded border uppercase font-bold text-muted-foreground">TXT</span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="linkedin" className="flex items-center gap-2">
+              <div className="space-y-3 pt-2">
+                <Label htmlFor="linkedin" className="flex items-center gap-2 font-semibold">
                   <Linkedin className="h-4 w-4 text-[#0077b5]" />
                   LinkedIn Profile URL (Optional)
                 </Label>
                 <Input
                   id="linkedin"
-                  placeholder="https://linkedin.com/in/username"
+                  placeholder="https://linkedin.com/in/yourprofile"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
+                  className="h-12"
                 />
+                <p className="text-xs text-muted-foreground italic">Add your LinkedIn URL to help AI pull more precise experience and skills ✨</p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <Button onClick={handleAutofill} disabled={!resumeFile || autofilling} className="w-full bg-gradient-to-r from-primary to-purple-600 hover:opacity-90">
-                {autofilling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                Autofill using AI ✨
+            <div className="flex flex-col gap-3 pt-4">
+              <Button onClick={handleAutofill} disabled={!resumeFile || autofilling} className="w-full h-14 text-lg font-bold bg-primary hover:opacity-95 shadow-lg group">
+                {autofilling ? (
+                  <>
+                    <Loader2 className="h-6 w-6 mr-3 animate-spin" />
+                    Analyzing your profile...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-6 w-6 mr-3 text-yellow-300 animate-pulse" />
+                    Autofill with AI ✨
+                  </>
+                )}
               </Button>
-              <Button variant="ghost" onClick={() => setStep('form')} className="w-full text-muted-foreground">
-                Apply manually without AI
+              <Button variant="ghost" onClick={() => setStep('form')} className="h-12 text-muted-foreground hover:text-foreground">
+                I'll fill the form manually
               </Button>
             </div>
-            <p className="text-[10px] text-center text-muted-foreground">
-              🔒 No signup required. Your data is used only for this application.
-            </p>
           </div>
         ) : (
-          <div className="space-y-5 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6 py-4">
+            <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Zuhair Arif" />
+                <Label htmlFor="name" className="font-semibold text-sm">Full name</Label>
+                <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" className="h-11" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="zuhair@example.com" />
+                <Label htmlFor="email" className="font-semibold text-sm">Working email</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" className="h-11" />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="font-semibold text-sm">Phone number</Label>
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 234 567 890" className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location" className="font-semibold text-sm">Location</Label>
+                <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="City, Country" className="h-11" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="headline">Professional Headline</Label>
-              <Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Full Stack Developer" />
+              <Label htmlFor="headline" className="font-semibold text-sm">Current Role / Professional Headline</Label>
+              <Input id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="e.g. Senior Software Engineer" className="h-11" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cover">Cover Letter / About (Optional)</Label>
+              <Label htmlFor="cover" className="font-semibold text-sm">Professional Summary / About</Label>
               <Textarea
                 id="cover"
-                placeholder="Tell the employer why you're a great fit..."
+                placeholder="Briefly describe your professional background..."
                 value={coverLetter}
                 onChange={(e) => setCoverLetter(e.target.value)}
-                rows={4}
+                rows={5}
+                className="resize-none"
               />
             </div>
 
-            {resumeFile && (
-              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-medium truncate max-w-[200px]">{resumeFile.name}</span>
+            <div className="flex flex-col gap-4 p-4 bg-muted/40 rounded-xl border border-muted-foreground/10">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Original Document</h4>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold truncate max-w-[300px]">{resumeFile?.name || 'Manual entry'}</p>
+                    <p className="text-xs text-muted-foreground italic">Attached to application</p>
+                  </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setResumeFile(null); setStep('upload'); }}>
-                  <X className="h-3 w-3" />
-                </Button>
+                {resumeFile && (
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => { setResumeFile(null); setStep('upload'); }}>
+                    Replace
+                  </Button>
+                )}
               </div>
-            )}
+            </div>
 
-            <div className="flex gap-3 justify-end pt-2">
-              <Button variant="outline" onClick={() => setStep('upload')}>Back</Button>
-              <Button onClick={handleSubmit} disabled={loading} className="px-8">
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Confirm & Apply'}
+            <div className="flex gap-4 justify-end pt-4 border-t">
+              <Button variant="outline" onClick={() => setStep('upload')} className="h-12 px-8">Back</Button>
+              <Button onClick={handleSubmit} disabled={loading} className="h-12 px-12 text-lg font-bold shadow-soft">
+                {loading ? <Loader2 className="h-5 w-5 mr-3 animate-spin" /> : 'Confirm & Send Application'}
               </Button>
             </div>
           </div>
