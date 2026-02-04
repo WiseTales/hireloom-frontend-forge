@@ -31,28 +31,56 @@ interface ExtractedProfile {
   summary: string | null;
 }
 
-// Simple text extraction from file (PDF/DOCX/TXT)
+// Improved text extraction from file (PDF/DOCX/TXT)
 async function extractTextFromFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
         const content = e.target?.result;
+        if (!content) return resolve('');
+
         if (file.type === 'text/plain') {
           resolve(content as string);
           return;
         }
+
         if (content instanceof ArrayBuffer) {
+          // Attempt to extract text from PDF/DOCX using a more robust regex-based approach
+          // Note: Browser-side extraction without libraries is inherently limited.
           const decoder = new TextDecoder('utf-8', { fatal: false });
           let text = decoder.decode(content);
 
           if (file.type === 'application/pdf') {
-            const textMatches = text.match(/\(([^)]+)\)/g) || [];
-            const streamText = textMatches.map(m => m.slice(1, -1)).filter(t => t.length > 2).join(' ');
-            const btEtMatches = text.match(/BT[\s\S]*?ET/g) || [];
-            const btText = btEtMatches.join(' ').replace(/\[[^\]]*\]/g, '');
-            text = (streamText + ' ' + btText).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ').replace(/\s+/g, ' ').trim();
+            // PDF parsing via regex is tricky, but let's try to catch more text blocks
+            const textParts: string[] = [];
+
+            // Extract text in parentheses (common in PDF)
+            const matches = text.match(/\(([^)]+)\)/g);
+            if (matches) {
+              matches.forEach(m => {
+                const inner = m.slice(1, -1).trim();
+                if (inner.length > 1) textParts.push(inner);
+              });
+            }
+
+            // Extract text in BT ... ET blocks
+            const btEtBlocks = text.match(/BT[\s\S]*?ET/g);
+            if (btEtBlocks) {
+              btEtBlocks.forEach(block => {
+                const cleaned = block.replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, (match) => match.slice(1, -1));
+                textParts.push(cleaned);
+              });
+            }
+
+            text = textParts.join(' ').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ' ').replace(/\s+/g, ' ').trim();
           }
+
+          // If we still have very little text, the PDF might be encrypted or using complex encoding
+          if (text.length < 100 && file.type === 'application/pdf') {
+            console.warn('PDF extraction resulted in very little text. This PDF might require a more advanced parser.');
+          }
+
           resolve(text);
         } else {
           resolve(String(content));

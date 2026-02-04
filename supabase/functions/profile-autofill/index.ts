@@ -113,9 +113,9 @@ serve(async (req) => {
     const { resumeText, linkedinUrl } = await req.json();
 
     if (!resumeText || resumeText.trim().length < 50) {
-      return jsonResponse({ 
-        success: false, 
-        error: 'Resume text is required and must contain meaningful content.' 
+      return jsonResponse({
+        success: false,
+        error: 'Resume text is required and must contain meaningful content.'
       });
     }
 
@@ -130,10 +130,10 @@ serve(async (req) => {
           console.log('Invalid LinkedIn URL, skipping:', linkedinUrl);
         } else {
           console.log('Fetching LinkedIn profile:', linkedinUrl);
-          
+
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000);
-          
+
           try {
             const response = await fetch(linkedinUrl, {
               signal: controller.signal,
@@ -148,12 +148,26 @@ serve(async (req) => {
 
             if (response.ok) {
               const htmlContent = await response.text();
-              const linkedinText = cleanHtmlToText(htmlContent);
+
+              // Try to find large JSON blobs in script tags (common in LinkedIn public profiles)
+              const scriptData = htmlContent.match(/<script type="application\/json"[^>]*>([\s\S]*?)<\/script>/gi);
+              let combinedData = '';
+              if (scriptData) {
+                scriptData.forEach(s => {
+                  if (s.length > 500) combinedData += s.replace(/<[^>]+>/g, ' ') + '\n';
+                });
+              }
+
+              const linkedinText = cleanHtmlToText(htmlContent) + '\n' + combinedData;
+
               if (linkedinText.length > 100) {
-                const truncatedLinkedin = linkedinText.length > 8000 
+                const truncatedLinkedin = linkedinText.length > 8000
                   ? linkedinText.substring(0, 8000) + '...[truncated]'
                   : linkedinText;
+                console.log(`LinkedIn data extracted (${linkedinText.length} chars)`);
                 mergedContext += `\n=== LINKEDIN PROFILE (SECONDARY SOURCE) ===\n${truncatedLinkedin}\n`;
+              } else {
+                console.log('LinkedIn fetch returned empty or login wall content.');
               }
             }
           } catch (fetchError) {
@@ -168,11 +182,12 @@ serve(async (req) => {
 
     // Limit total context
     const maxLength = 20000;
-    const truncatedContext = mergedContext.length > maxLength 
+    const truncatedContext = mergedContext.length > maxLength
       ? mergedContext.substring(0, maxLength) + '...[truncated]'
       : mergedContext;
 
     console.log('Context length:', truncatedContext.length);
+    console.log('Preview of extracted text (first 200 chars):', truncatedContext.substring(0, 200));
 
     // Call Gemini API
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -181,36 +196,37 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: 'AI service not configured' });
     }
 
-    const systemPrompt = `You are an expert resume parser and HR data extractor.
+    const systemPrompt = `You are the world's most precise resume parsing AI.
+Your goal is to extract EVERY possible detail from the provided Resume (primary) and LinkedIn (secondary) text.
 
-Your task is to extract structured candidate profile data from resumes and LinkedIn profiles.
+SCHEMA REQUIREMENTS:
+- full_name: string (Required)
+- headline: string (Current role or professional title)
+- email: string (Valid email format)
+- phone: string
+- location: string (City, Country)
+- total_experience_years: number (Sum of all relevant experience)
+- summary: string (Professional bio/summary)
+- experience: array of { role, company, location, start_date (YYYY-MM), end_date (YYYY-MM or null), currently_working (boolean), responsibilities (array of strings) }
+- education: array of { degree, institution, field, start_date (YYYY-MM), end_date (YYYY-MM) }
+- skills_technical: array of strings (e.g., React, Python)
+- skills_soft: array of strings (e.g., Leadership, Communication)
+- certifications: array of { name, issuing_organization, issue_date (YYYY-MM) }
+- projects: array of { title, description, technologies (array), url }
+- portfolio_links: array of strings (GitHub, Portfolio, LinkedIn)
+- languages: array of strings
 
-Rules:
-- Prefer resume data over LinkedIn if conflict exists
-- Do not hallucinate missing information
-- Return null for unavailable fields
-- For dates, use YYYY-MM format when possible (e.g., "2024-01")
-- Output MUST be a single JSON object only. No markdown, no code fences, no explanations.`;
+STRICT RULES:
+1. Prefer Resume data over LinkedIn for conflicts.
+2. If the input text is messy/unstructured (common in PDF extractions), look for patterns like 'Name:', 'Experience', dates (e.g., '2020-2022' or 'Jan 20 onwards').
+3. CLEAN UP OCR NOISE: Remove random single letters, fix words that seem broken by line breaks, and ignore CID characters or weird symbols from the PDF stream.
+4. DO NOT hallucinate. If a field is missing, return null.
+5. CLEAN TITLES: Standardize 'SDE 2' to 'Software Development Engineer II' if context allows, or keep as is if unsure.
+6. You MUST return valid JSON.`;
 
-    const userPrompt = `Extract the following candidate details and return as JSON:
+    const userPrompt = `Systematically parse the following candidate data. Be extremely precise and thorough. Find as much info as possible even if hidden in raw text.
 
-- full_name: Full name of the candidate
-- headline: Professional headline or title
-- email: Email address if present
-- phone: Phone number if present
-- location: City, Country format
-- total_experience_years: Total years of professional experience (number)
-- summary: Professional summary/about section
-- experience: Array of work experiences with: role, company, location, start_date (YYYY-MM), end_date (YYYY-MM or null if current), currently_working (boolean), responsibilities (array of strings)
-- education: Array with: degree, institution, field, start_date (YYYY-MM), end_date (YYYY-MM)
-- skills_technical: Array of technical skills
-- skills_soft: Array of soft skills
-- certifications: Array with: name, issuing_organization, issue_date (YYYY-MM)
-- projects: Array with: title, description, technologies (array), url
-- portfolio_links: Array of portfolio/GitHub URLs
-- languages: Array of languages spoken
-
-Candidate Data:
+DATA TO PARSE:
 ${truncatedContext}`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -220,19 +236,20 @@ ${truncatedContext}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
+        model: 'google/gemini-1.5-pro',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.1,
+        temperature: 0,
+        response_format: { type: 'json_object' }
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error('AI API error:', aiResponse.status, errorText);
-      
+
       if (aiResponse.status === 429) {
         return jsonResponse({
           success: false,
