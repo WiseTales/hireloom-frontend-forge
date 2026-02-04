@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface ExtractedProfile {
   full_name: string | null;
-  headline: string | null;
+  professional_headline: string | null;
   email: string | null;
   phone: string | null;
   location: string | null;
@@ -26,16 +26,12 @@ interface ExtractedProfile {
     degree: string;
     institution: string;
     field: string | null;
-    start_date: string | null;
-    end_date: string | null;
+    graduation_year: number | null;
   }[] | null;
   skills_technical: string[] | null;
   skills_soft: string[] | null;
-  certifications: {
-    name: string;
-    issuing_organization: string;
-    issue_date: string | null;
-  }[] | null;
+  tools_and_technologies: string[] | null;
+  certifications: string[] | null;
   projects: {
     title: string;
     description: string;
@@ -89,12 +85,14 @@ function cleanHtmlToText(html: string): string {
 function extractJsonFromModelText(raw: string): string | null {
   const text = raw.trim();
 
+  // Try to find JSON in markdown code blocks
   const fencedJson = text.match(/```json\s*([\s\S]*?)```/i);
   if (fencedJson?.[1]) return fencedJson[1].trim();
 
   const fenced = text.match(/```\s*([\s\S]*?)```/);
   if (fenced?.[1]) return fenced[1].trim();
 
+  // Try to find raw JSON object
   const firstBrace = text.indexOf('{');
   const lastBrace = text.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -115,7 +113,7 @@ serve(async (req) => {
     if (!resumeText || resumeText.trim().length < 50) {
       return jsonResponse({
         success: false,
-        error: 'Resume text is required and must contain meaningful content.'
+        error: 'Resume text is required and must contain meaningful content (at least 50 characters).'
       });
     }
 
@@ -180,7 +178,7 @@ serve(async (req) => {
       }
     }
 
-    // Limit total context
+    // Limit total context to avoid token limits
     const maxLength = 20000;
     const truncatedContext = mergedContext.length > maxLength
       ? mergedContext.substring(0, maxLength) + '...[truncated]'
@@ -188,11 +186,11 @@ serve(async (req) => {
 
     console.log('Context length:', truncatedContext.length);
 
-    // Call Gemini API
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    if (!GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY not configured');
-      return jsonResponse({ success: false, error: 'AI service not configured' });
+    // Use Lovable AI Gateway (pre-configured, no API key needed from user)
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not configured');
+      return jsonResponse({ success: false, error: 'AI service not configured. Please contact support.' });
     }
 
     const systemPrompt = `You are an expert resume and LinkedIn profile parser.
@@ -201,72 +199,94 @@ Rules:
 - Resume is the primary source of truth
 - LinkedIn is secondary and should only fill missing data
 - CLEAN UP OCR NOISE: Remove random single letters, fix words broken by line breaks, and ignore weird symbols.
-- Do NOT hallucinate
+- Do NOT hallucinate or make up information
 - If information is missing, return null
-- Output valid JSON only. No markdown fences.`;
+- Output ONLY valid JSON, no additional text or markdown`;
 
-    const userPrompt = `Extract the following candidate profile fields:
+    const userPrompt = `Extract the following candidate profile fields from the provided data. Return a valid JSON object with these fields:
 
-- full_name: string
-- professional_headline: string
-- email: string
-- phone: string
-- location: string
-- total_experience_years: number
-- experience: array of { role, company, location, start_date, end_date, currently_working, responsibilities (array) }
-- education: array of { degree, institution, field, graduation_year }
-- skills_technical: array of strings
-- skills_soft: array of strings
-- tools_and_technologies: array of strings
-- certifications: array of strings
-- projects: array de { title, description, technologies (array), url }
-- portfolio_links: array of strings
-- languages: array of strings
-- summary: string
+- full_name: string or null
+- professional_headline: string or null (job title or professional summary)
+- email: string or null
+- phone: string or null
+- location: string or null (city, country)
+- total_experience_years: number or null
+- summary: string or null (professional summary/about section)
+- experience: array of objects with { role, company, location, start_date, end_date, currently_working, responsibilities[] } or null
+- education: array of objects with { degree, institution, field, graduation_year } or null
+- skills_technical: array of strings or null
+- skills_soft: array of strings or null
+- tools_and_technologies: array of strings or null
+- certifications: array of strings or null
+- projects: array of objects with { title, description, technologies[], url } or null
+- portfolio_links: array of URLs or null
+- languages: array of strings or null
 
 Candidate Data:
 ${truncatedContext}`;
 
-    // Using Google's official Gemini endpoint
-    const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    console.log('Calling Lovable AI Gateway...');
+
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ parts: [{ text: userPrompt }] }],
-        generationConfig: {
-          response_mime_type: "application/json",
-          temperature: 0,
-        }
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0,
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error('AI API error:', aiResponse.status, errorText);
+      
+      if (aiResponse.status === 429) {
+        return jsonResponse({
+          success: false,
+          error: 'AI service is temporarily busy. Please try again in a moment.',
+        });
+      }
+      if (aiResponse.status === 402) {
+        return jsonResponse({
+          success: false,
+          error: 'AI service quota exceeded. Please contact support.',
+        });
+      }
+      
       return jsonResponse({
         success: false,
-        error: 'AI extraction failed. Please check your API key and try again.',
+        error: 'AI extraction failed. Please try again or fill the form manually.',
       });
     }
 
     const aiData = await aiResponse.json();
-    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const content = aiData.choices?.[0]?.message?.content;
 
     if (!content) {
-      return jsonResponse({ success: false, error: 'AI returned empty response' });
+      console.error('AI returned empty content');
+      return jsonResponse({ success: false, error: 'AI returned empty response. Please try again.' });
     }
+
+    console.log('AI response received, parsing JSON...');
 
     // Parse the JSON from the AI response
     let extractedData: ExtractedProfile;
     try {
       const jsonStr = extractJsonFromModelText(content);
-      if (!jsonStr) throw new Error('No JSON object found in model output');
+      if (!jsonStr) {
+        console.error('No JSON found in response:', content.substring(0, 500));
+        throw new Error('No JSON object found in AI response');
+      }
       extractedData = JSON.parse(jsonStr);
     } catch (parseError) {
-      console.error('Failed to parse AI response:', content);
+      console.error('Failed to parse AI response:', content.substring(0, 1000));
       const details = parseError instanceof Error ? parseError.message : String(parseError);
       return jsonResponse({
         success: false,
@@ -282,7 +302,7 @@ ${truncatedContext}`;
     console.error('Profile autofill error:', error);
     return jsonResponse({
       success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      error: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
     });
   }
 });
