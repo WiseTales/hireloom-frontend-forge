@@ -179,12 +179,14 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       if (error || !data.success) throw new Error(data?.error || 'Extraction failed');
 
       const extracted: ExtractedProfile = data.data;
+      
+      // Schema-first mapping: AI output keys → form state (deterministic)
       setFullName(extracted.full_name || fullName);
       setEmail(extracted.email || email);
-      setHeadline(extracted.professional_headline || extracted.headline || headline);
       setPhone(extracted.phone || phone);
       setLocation(extracted.location || location);
-      if (extracted.summary) setCoverLetter(extracted.summary);
+      setHeadline(extracted.headline || headline);
+      if (extracted.professional_summary) setCoverLetter(extracted.professional_summary);
 
       setStep('form');
       toast({ title: 'Autofilled Successfully ✨', description: 'Please review and confirm your details.' });

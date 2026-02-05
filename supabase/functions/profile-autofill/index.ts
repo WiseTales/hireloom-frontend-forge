@@ -193,24 +193,30 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: 'AI service not configured. Please contact support.' });
     }
 
-    const systemPrompt = `You are a precise, expert resume-to-LinkedIn profile parser. Extract ONLY information that is explicitly present in the resume text. Never hallucinate, invent, assume, or add details not stated. If a field is missing or unclear, output null or empty string "" / empty array [] as appropriate.
+    const systemPrompt = `You are a strict, production-grade candidate profile parser for a professional hiring platform.
 
-CRITICAL RULES - MUST FOLLOW EXACTLY:
-1. Output ONLY valid JSON. No explanations, no markdown fences, no introductory text, no trailing commas, nothing before or after the JSON object.
-2. Resume is the primary source of truth. LinkedIn is secondary and should only fill missing data.
-3. CLEAN UP OCR NOISE: Remove random single letters, fix words broken by line breaks, and ignore weird symbols.
-4. Use the EXACT JSON schema structure provided. Do not add, remove, rename, or reorder keys.`;
+Your task is to extract candidate details ONLY from the provided resume text and (optionally) LinkedIn profile text.
+
+CRITICAL RULES (MUST FOLLOW):
+1. Output ONLY valid JSON.
+2. Do NOT include explanations, markdown, or extra text.
+3. Do NOT hallucinate or assume missing information.
+4. If a value is missing or unclear, return null.
+5. Use EXACTLY the JSON schema below. Do not add, remove, rename, or reorder keys.
+6. Keep language professional and concise (suitable for enterprise hiring platforms like Stripe, Google, Atlassian).
+7. Resume data overrides LinkedIn if conflicts exist.
+8. CLEAN UP OCR NOISE: Remove random single letters, fix words broken by line breaks, and ignore weird symbols.`;
 
     const userPrompt = `Extract the following candidate profile fields. Return a valid JSON object with EXACTLY this structure:
 
 {
   "full_name": "string | null",
-  "professional_headline": "string (professional title / current role summary) | null",
   "email": "string | null",
   "phone": "string | null",
-  "location": "string (e.g. 'Bangalore, Karnataka, India') | null",
+  "location": "string | null",
+  "headline": "string | null",
+  "professional_summary": "string | null",
   "total_experience_years": "number | null",
-  "summary": "string (3-6 sentences professional overview, concise and impactful) | null",
   "experience": [
     {
       "role": "string",
@@ -245,6 +251,14 @@ CRITICAL RULES - MUST FOLLOW EXACTLY:
   "portfolio_links": ["array of URLs"],
   "languages": ["array of strings (e.g. 'English (Native)', 'Hindi (Professional)')"]
 }
+
+FIELD GUIDELINES:
+- full_name: Candidate's full legal name.
+- email: Professional or working email only.
+- phone: Include country code if present.
+- location: City, Country format if possible.
+- headline: Current role or professional identity (1 line).
+- professional_summary: 3-5 concise sentences, written in third person, based ONLY on resume/LinkedIn content. No buzzwords or exaggeration.
 
 Resume/LinkedIn data to parse (may contain OCR artifacts - clean and interpret logically but do NOT fabricate):
 ${truncatedContext}`;
