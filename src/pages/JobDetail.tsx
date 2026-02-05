@@ -25,6 +25,7 @@ interface Job {
   location_type: string | null;
   work_type: string | null;
   team: string | null;
+  department: string | null;
   posted_by: string;
   created_at: string;
 }

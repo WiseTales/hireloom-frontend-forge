@@ -193,36 +193,60 @@ serve(async (req) => {
       return jsonResponse({ success: false, error: 'AI service not configured. Please contact support.' });
     }
 
-    const systemPrompt = `You are an expert resume and LinkedIn profile parser.
+    const systemPrompt = `You are a precise, expert resume-to-LinkedIn profile parser. Extract ONLY information that is explicitly present in the resume text. Never hallucinate, invent, assume, or add details not stated. If a field is missing or unclear, output null or empty string "" / empty array [] as appropriate.
 
-Rules:
-- Resume is the primary source of truth
-- LinkedIn is secondary and should only fill missing data
-- CLEAN UP OCR NOISE: Remove random single letters, fix words broken by line breaks, and ignore weird symbols.
-- Do NOT hallucinate or make up information
-- If information is missing, return null
-- Output ONLY valid JSON, no additional text or markdown`;
+CRITICAL RULES - MUST FOLLOW EXACTLY:
+1. Output ONLY valid JSON. No explanations, no markdown fences, no introductory text, no trailing commas, nothing before or after the JSON object.
+2. Resume is the primary source of truth. LinkedIn is secondary and should only fill missing data.
+3. CLEAN UP OCR NOISE: Remove random single letters, fix words broken by line breaks, and ignore weird symbols.
+4. Use the EXACT JSON schema structure provided. Do not add, remove, rename, or reorder keys.`;
 
-    const userPrompt = `Extract the following candidate profile fields from the provided data. Return a valid JSON object with these fields:
+    const userPrompt = `Extract the following candidate profile fields. Return a valid JSON object with EXACTLY this structure:
 
-- full_name: string or null
-- professional_headline: string or null (job title or professional summary)
-- email: string or null
-- phone: string or null
-- location: string or null (city, country)
-- total_experience_years: number or null
-- summary: string or null (professional summary/about section)
-- experience: array of objects with { role, company, location, start_date, end_date, currently_working, responsibilities[] } or null
-- education: array of objects with { degree, institution, field, graduation_year } or null
-- skills_technical: array of strings or null
-- skills_soft: array of strings or null
-- tools_and_technologies: array of strings or null
-- certifications: array of strings or null
-- projects: array of objects with { title, description, technologies[], url } or null
-- portfolio_links: array of URLs or null
-- languages: array of strings or null
+{
+  "full_name": "string | null",
+  "professional_headline": "string (professional title / current role summary) | null",
+  "email": "string | null",
+  "phone": "string | null",
+  "location": "string (e.g. 'Bangalore, Karnataka, India') | null",
+  "total_experience_years": "number | null",
+  "summary": "string (3-6 sentences professional overview, concise and impactful) | null",
+  "experience": [
+    {
+      "role": "string",
+      "company": "string",
+      "location": "string | null",
+      "start_date": "YYYY-MM or YYYY or null",
+      "end_date": "YYYY-MM or YYYY or 'Present' or null",
+      "currently_working": "boolean",
+      "responsibilities": ["array of strings, 4-8 concise lines max, start each with action verb"]
+    }
+  ],
+  "education": [
+    {
+      "degree": "string (e.g. 'Bachelor of Technology')",
+      "institution": "string",
+      "field": "string | null",
+      "graduation_year": "number | null"
+    }
+  ],
+  "skills_technical": ["array of strings (exact skill names as written, lowercase, unique, 8-15 max)"],
+  "skills_soft": ["array of strings"],
+  "tools_and_technologies": ["array of strings"],
+  "certifications": ["array of strings"],
+  "projects": [
+    {
+      "title": "string",
+      "description": "string",
+      "technologies": ["array of strings"],
+      "url": "string | null"
+    }
+  ],
+  "portfolio_links": ["array of URLs"],
+  "languages": ["array of strings (e.g. 'English (Native)', 'Hindi (Professional)')"]
+}
 
-Candidate Data:
+Resume/LinkedIn data to parse (may contain OCR artifacts - clean and interpret logically but do NOT fabricate):
 ${truncatedContext}`;
 
     console.log('Calling Lovable AI Gateway...');
