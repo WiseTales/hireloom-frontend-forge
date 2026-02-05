@@ -22,13 +22,14 @@ interface JobApplyModalProps {
   onSuccess?: () => void;
 }
 
+// Canonical Candidate Apply Schema - aligned with edge function output
 interface ExtractedProfile {
   full_name: string | null;
-  professional_headline: string | null;
-  headline: string | null;
   email: string | null;
   phone: string | null;
   location: string | null;
+  headline: string | null;
+  professional_summary: string | null;
   total_experience_years: number | null;
   experience: any[] | null;
   education: any[] | null;
@@ -39,7 +40,6 @@ interface ExtractedProfile {
   projects: any[] | null;
   portfolio_links: string[] | null;
   languages: string[] | null;
-  summary: string | null;
 }
 
 // Improved text extraction from file (PDF/DOCX/TXT)
