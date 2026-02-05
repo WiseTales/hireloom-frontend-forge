@@ -424,7 +424,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
                   id="consent"
                   checked={consentChecked}
                   onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <Label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer font-medium">
                   I consent to using AI to analyze my resume and LinkedIn details.
