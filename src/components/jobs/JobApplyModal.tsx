@@ -22,13 +22,14 @@ interface JobApplyModalProps {
   onSuccess?: () => void;
 }
 
+// Canonical Candidate Apply Schema - aligned with edge function output
 interface ExtractedProfile {
   full_name: string | null;
-  professional_headline: string | null;
-  headline: string | null;
   email: string | null;
   phone: string | null;
   location: string | null;
+  headline: string | null;
+  professional_summary: string | null;
   total_experience_years: number | null;
   experience: any[] | null;
   education: any[] | null;
@@ -39,7 +40,6 @@ interface ExtractedProfile {
   projects: any[] | null;
   portfolio_links: string[] | null;
   languages: string[] | null;
-  summary: string | null;
 }
 
 // Improved text extraction from file (PDF/DOCX/TXT)
@@ -179,12 +179,14 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
       if (error || !data.success) throw new Error(data?.error || 'Extraction failed');
 
       const extracted: ExtractedProfile = data.data;
+      
+      // Schema-first mapping: AI output keys → form state (deterministic)
       setFullName(extracted.full_name || fullName);
       setEmail(extracted.email || email);
-      setHeadline(extracted.professional_headline || extracted.headline || headline);
       setPhone(extracted.phone || phone);
       setLocation(extracted.location || location);
-      if (extracted.summary) setCoverLetter(extracted.summary);
+      setHeadline(extracted.headline || headline);
+      if (extracted.professional_summary) setCoverLetter(extracted.professional_summary);
 
       setStep('form');
       toast({ title: 'Autofilled Successfully ✨', description: 'Please review and confirm your details.' });
@@ -422,7 +424,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
                   id="consent"
                   checked={consentChecked}
                   onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <Label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer font-medium">
                   I consent to using AI to analyze my resume and LinkedIn details.
@@ -444,7 +446,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-6 w-6 mr-3 text-yellow-300 animate-pulse" />
+                    <Sparkles className="h-6 w-6 mr-3 text-primary animate-pulse" />
                     Autofill using AI ✨
                   </>
                 )}
