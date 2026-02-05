@@ -73,6 +73,10 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
     projects: true,
   });
 
+  // Contract normalization: edge function returns `professional_headline`, while
+  // the profile table + existing UI use `headline`.
+  const resolvedHeadline = data.headline || data.professional_headline;
+
   const toggleSection = (section: keyof typeof selectedSections) => {
     setSelectedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
@@ -85,7 +89,7 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
       if (selectedSections.profile) {
         await supabase.from('profiles').update({
           full_name: data.full_name || undefined,
-          headline: data.headline || undefined,
+          headline: resolvedHeadline || undefined,
           bio: data.summary || undefined,
         }).eq('id', profileId);
       }
@@ -200,7 +204,7 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
           {selectedSections.profile && (
             <div className="ml-6 p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
               {data.full_name && <p><strong>Name:</strong> {data.full_name}</p>}
-              {data.headline && <p><strong>Headline:</strong> {data.headline}</p>}
+              {resolvedHeadline && <p><strong>Headline:</strong> {resolvedHeadline}</p>}
               {data.location && <p><strong>Location:</strong> {data.location}</p>}
               {data.summary && <p><strong>Summary:</strong> {data.summary.substring(0, 200)}...</p>}
             </div>
@@ -316,12 +320,17 @@ export const AutofillDataReview = ({ data, profileId, onSaveComplete }: Autofill
               </div>
               {selectedSections.certifications && (
                 <div className="ml-6 space-y-2">
-                  {data.certifications.map((cert, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-muted/50 text-sm">
-                      <p className="font-medium">{cert.name}</p>
-                      <p className="text-muted-foreground">{cert.issuing_organization}</p>
-                    </div>
-                  ))}
+                  {data.certifications.map((cert, idx) => {
+                    const certName = typeof cert === 'string' ? cert : cert.name;
+                    const org = typeof cert === 'string' ? null : cert.issuing_organization;
+
+                    return (
+                      <div key={idx} className="p-3 rounded-lg bg-muted/50 text-sm">
+                        <p className="font-medium">{certName}</p>
+                        {org && <p className="text-muted-foreground">{org}</p>}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
