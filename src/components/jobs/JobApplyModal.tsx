@@ -446,7 +446,7 @@ export const JobApplyModal = ({ open, onOpenChange, job, onSuccess }: JobApplyMo
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-6 w-6 mr-3 text-yellow-300 animate-pulse" />
+                    <Sparkles className="h-6 w-6 mr-3 text-primary animate-pulse" />
                     Autofill using AI ✨
                   </>
                 )}
