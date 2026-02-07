@@ -6,11 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2 } from 'lucide-react';
+import { Briefcase, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const CompanySignup = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [companyName, setCompanyName] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +25,7 @@ const CompanySignup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!companyName || !companyEmail || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
@@ -41,7 +41,6 @@ const CompanySignup = () => {
       return;
     }
 
-    // Validate company email domain
     const emailDomain = companyEmail.split('@')[1];
     const publicDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com'];
     if (publicDomains.includes(emailDomain?.toLowerCase())) {
@@ -51,7 +50,6 @@ const CompanySignup = () => {
 
     setLoading(true);
     try {
-      // 1. Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: companyEmail,
         password: password,
@@ -59,7 +57,7 @@ const CompanySignup = () => {
           emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             full_name: companyName,
-            role: 'recruiter', // Company owner gets recruiter role
+            role: 'recruiter',
           },
         },
       });
@@ -67,7 +65,6 @@ const CompanySignup = () => {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Failed to create user');
 
-      // 2. Create the company
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert({
@@ -79,7 +76,6 @@ const CompanySignup = () => {
 
       if (companyError) throw companyError;
 
-      // 3. Add user to company_users as super_admin
       const { error: companyUserError } = await supabase
         .from('company_users')
         .insert({
@@ -90,7 +86,7 @@ const CompanySignup = () => {
 
       if (companyUserError) throw companyUserError;
 
-      toast.success('Company account created successfully! Please check your email to verify your account.');
+      toast.success('Account created! Please check your email to verify.');
       navigate('/login');
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -101,96 +97,140 @@ const CompanySignup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-md p-8 shadow-elevated">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building2 className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Create Company Account</h1>
-          <p className="text-muted-foreground text-sm">
-            Set up your company's hiring portal
-          </p>
+    <div className="min-h-screen flex bg-background">
+      {/* Left Panel — Navy Brand */}
+      <div className="hidden lg:flex lg:w-[45%] gradient-hero items-center justify-center p-12 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -left-40 w-[400px] h-[400px] bg-primary-foreground/5 rounded-full blur-[100px]" />
+          <div className="absolute -bottom-40 -right-40 w-[350px] h-[350px] bg-primary-foreground/3 rounded-full blur-[80px]" />
         </div>
+        <div className="relative z-10 max-w-md">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="h-10 w-10 rounded-md bg-primary-foreground/10 flex items-center justify-center">
+              <Briefcase className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-heading font-bold text-primary-foreground">HireLoom</span>
+          </div>
+          <h2 className="text-3xl font-heading font-bold text-primary-foreground mb-6 leading-tight">
+            Start hiring with confidence.
+          </h2>
+          <div className="space-y-3">
+            {[
+              'Post jobs and manage your pipeline',
+              'Collaborate with your hiring team',
+              'Track candidates from apply to offer',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2.5">
+                <CheckCircle2 className="h-4 w-4 text-primary-foreground/50 shrink-0" />
+                <span className="text-sm text-primary-foreground/70">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="companyName" className="block text-sm font-medium mb-2">
-              Company Name
-            </label>
-            <Input
-              id="companyName"
-              type="text"
-              placeholder="Acme Corporation"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              required
-            />
+      {/* Right Panel — Form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-2.5 justify-center mb-8">
+            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+              <Briefcase className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-heading font-bold">HireLoom</span>
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
-              Company Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@company.com"
-              value={companyEmail}
-              onChange={(e) => setCompanyEmail(e.target.value)}
-              required
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Use your official company email address
+          <div className="mb-8">
+            <h1 className="text-2xl font-heading font-bold text-foreground">Create your account</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Set up your company's hiring portal in minutes.
             </p>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="companyName" className="block text-sm font-medium mb-1.5">
+                Company Name
+              </label>
+              <Input
+                id="companyName"
+                type="text"
+                placeholder="Acme Corporation"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="h-11"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+                Work Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@company.com"
+                value={companyEmail}
+                onChange={(e) => setCompanyEmail(e.target.value)}
+                className="h-11"
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Use your official company email address.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Min. 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-11"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1.5">
+                Confirm Password
+              </label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="h-11"
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
+              {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center text-sm">
+            <span className="text-muted-foreground">Already have an account? </span>
+            <Link to="/login" className="text-primary hover:underline font-medium">
+              Sign In
+            </Link>
           </div>
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-              Confirm Password
-            </label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+          <div className="mt-4 text-center">
+            <Link to="/jobs" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              View Open Positions →
+            </Link>
           </div>
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating Company...' : 'Create Company Account'}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center text-sm">
-          <span className="text-muted-foreground">Already have a company account? </span>
-          <Link to="/login" className="text-primary hover:underline font-medium">
-            Sign In
-          </Link>
         </div>
-
-        <div className="mt-4 text-center">
-          <Link to="/jobs" className="text-xs text-muted-foreground hover:underline">
-            View Open Positions →
-          </Link>
-        </div>
-      </Card>
+      </div>
     </div>
   );
 };
