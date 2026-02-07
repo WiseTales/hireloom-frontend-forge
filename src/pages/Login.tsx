@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Building2 } from 'lucide-react';
+import { Briefcase, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState<'email' | 'password'>('email');
 
   const from = (location.state as any)?.from || '/dashboard';
 
@@ -25,7 +26,7 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
@@ -34,10 +35,10 @@ const Login = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      toast.success('Login successful!');
+      toast.success('Welcome back!');
       navigate(from);
     } catch (error: any) {
-      toast.error(error.message || 'Invalid credentials. Please try again.');
+      toast.error(error.message || 'Invalid credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -48,98 +49,130 @@ const Login = () => {
       toast.error('Please enter your work email');
       return;
     }
-    setShowPassword(true);
+    setStep('password');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6">
-        {/* Logo */}
-        <div className="flex justify-center">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <Building2 className="h-8 w-8 text-primary" />
-          </div>
+    <div className="min-h-screen flex bg-background">
+      {/* Left Panel — Navy Brand */}
+      <div className="hidden lg:flex lg:w-[45%] gradient-hero items-center justify-center p-12 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -left-40 w-[400px] h-[400px] bg-primary-foreground/5 rounded-full blur-[100px]" />
+          <div className="absolute -bottom-40 -right-40 w-[350px] h-[350px] bg-primary-foreground/3 rounded-full blur-[80px]" />
         </div>
-
-        {/* Title */}
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-foreground">Sign in to HireLoom</h1>
-          <p className="text-muted-foreground text-sm mt-2">
-            Company portal access
+        <div className="relative z-10 max-w-md">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="h-10 w-10 rounded-md bg-primary-foreground/10 flex items-center justify-center">
+              <Briefcase className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-heading font-bold text-primary-foreground">HireLoom</span>
+          </div>
+          <h2 className="text-3xl font-heading font-bold text-primary-foreground mb-4 leading-tight">
+            Your hiring command center.
+          </h2>
+          <p className="text-primary-foreground/60 leading-relaxed">
+            Manage jobs, track candidates, and collaborate with your team — all from one platform built for modern recruiting.
           </p>
         </div>
+      </div>
 
-        {/* Email Form */}
-        {!showPassword ? (
-          <div className="space-y-4">
-            <p className="text-center text-sm text-muted-foreground">
-              Enter your work email to continue
+      {/* Right Panel — Login Form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm space-y-8">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-2.5 justify-center">
+            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+              <Briefcase className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-heading font-bold">HireLoom</span>
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-foreground">Sign in</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Enter your work email to access your company portal.
             </p>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 h-12"
-                onKeyDown={(e) => e.key === 'Enter' && handleEmailContinue()}
-              />
-              <Button 
-                onClick={handleEmailContinue}
-                className="h-12 px-6"
-              >
-                NEXT
+          </div>
+
+          {step === 'email' ? (
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium mb-1.5">Email</label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11"
+                  onKeyDown={(e) => e.key === 'Enter' && handleEmailContinue()}
+                  autoFocus
+                />
+              </div>
+              <Button onClick={handleEmailContinue} className="w-full h-11 font-semibold">
+                Continue
               </Button>
             </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-12"
-              />
-            </div>
-            <div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-12"
-              />
-            </div>
-            <Button type="submit" className="w-full h-12" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
-            <button 
-              type="button"
-              className="text-sm text-muted-foreground hover:text-foreground w-full text-center"
-              onClick={() => setShowPassword(false)}
-            >
-              ← Back
-            </button>
-          </form>
-        )}
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Email</label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Password</label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 pr-10"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full h-11 font-semibold" disabled={isLoading}>
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+              <button
+                type="button"
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground w-full justify-center"
+                onClick={() => setStep('email')}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back
+              </button>
+            </form>
+          )}
 
-        {/* Footer Links */}
-        <div className="text-center space-y-2 text-xs text-muted-foreground pt-8">
-          <a href="/jobs" className="hover:underline">View Open Positions</a>
-          <span className="mx-2">·</span>
-          <a href="/signup" className="hover:underline">Create Company Account</a>
-          <span className="mx-2">·</span>
-          <a href="#" className="hover:underline">Privacy Notice</a>
+          <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-4">
+            <a href="/jobs" className="hover:text-foreground transition-colors">Open Positions</a>
+            <span>·</span>
+            <a href="/signup" className="hover:text-foreground transition-colors">Create Account</a>
+            <span>·</span>
+            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+          </div>
         </div>
       </div>
     </div>
