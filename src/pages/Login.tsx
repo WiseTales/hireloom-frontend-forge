@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Briefcase, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -26,12 +26,10 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
     }
-
     setIsLoading(true);
     try {
       await login(email, password);
@@ -62,43 +60,40 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Left Panel — Navy Brand */}
+      {/* Left Panel — Green Brand */}
       <div className="hidden lg:flex lg:w-[45%] gradient-hero items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -left-40 w-[400px] h-[400px] bg-primary-foreground/5 rounded-full blur-[100px]" />
-          <div className="absolute -bottom-40 -right-40 w-[350px] h-[350px] bg-primary-foreground/3 rounded-full blur-[80px]" />
-        </div>
         <div className="relative z-10 max-w-md">
           <div className="flex items-center gap-3 mb-10">
-            <div className="h-10 w-10 rounded-md bg-primary-foreground/10 flex items-center justify-center">
-              <Briefcase className="h-5 w-5 text-primary-foreground" />
-            </div>
             <span className="text-xl font-heading font-bold text-primary-foreground">HireLoom</span>
           </div>
           <h2 className="text-3xl font-heading font-bold text-primary-foreground mb-4 leading-tight">
             Your hiring command center.
           </h2>
-          <p className="text-primary-foreground/60 leading-relaxed">
+          <p className="text-primary-foreground/70 leading-relaxed">
             Manage jobs, track candidates, and collaborate with your team — all from one platform built for modern recruiting.
           </p>
+          <div className="mt-8 space-y-3">
+            {['Visual candidate pipeline', 'Multi-channel job posting', 'AI resume parsing'].map((item) => (
+              <div key={item} className="flex items-center gap-2.5">
+                <CheckCircle2 className="h-4 w-4 text-primary-foreground/50 shrink-0" />
+                <span className="text-sm text-primary-foreground/70">{item}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Right Panel — Login Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm space-y-8">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center gap-2.5 justify-center">
-            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
-              <Briefcase className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-heading font-bold">HireLoom</span>
+          <div className="lg:hidden text-center">
+            <span className="text-xl font-heading font-bold text-primary">HireLoom</span>
           </div>
 
           <div>
             <h1 className="text-2xl font-heading font-bold text-foreground">Sign in</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Enter your work email to access your company portal.
+              Enter your work email to access your hiring dashboard.
             </p>
           </div>
 
@@ -125,12 +120,7 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Email</label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11"
-                />
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Password</label>
@@ -167,11 +157,9 @@ const Login = () => {
           )}
 
           <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-4">
-            <a href="/jobs" className="hover:text-foreground transition-colors">Open Positions</a>
+            <Link to="/signup" className="hover:text-foreground transition-colors">Create Account</Link>
             <span>·</span>
-            <a href="/signup" className="hover:text-foreground transition-colors">Create Account</a>
-            <span>·</span>
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+            <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
           </div>
         </div>
       </div>

@@ -3,8 +3,6 @@ import { Navigate } from 'react-router-dom';
 import RecruiterDashboard from '@/components/RecruiterDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
 import InterviewerDashboard from '@/components/InterviewerDashboard';
-import EmployeeDashboard from '@/components/EmployeeDashboard';
-import JobSeekerDashboard from '@/components/JobSeekerDashboard';
 
 const Dashboard = () => {
   const { isAuthenticated, userRole, loading } = useAuth();
@@ -16,7 +14,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen gradient-subtle flex items-center justify-center">
-        <p className="text-lg text-muted-foreground">Loading...</p>
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -30,16 +28,13 @@ const Dashboard = () => {
     return <AdminDashboard />;
   }
 
-  if (userRole === 'interviewer') {
+  // Hiring managers see a read-only view (reuse InterviewerDashboard for now)
+  if (userRole === 'hiring_manager' || userRole === 'interviewer') {
     return <InterviewerDashboard />;
   }
 
-  if (userRole === 'employee') {
-    return <EmployeeDashboard />;
-  }
-
-  // Default: Job Seeker Dashboard (legacy support)
-  return <JobSeekerDashboard />;
+  // Default fallback
+  return <RecruiterDashboard />;
 };
 
 export default Dashboard;
