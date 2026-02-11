@@ -225,6 +225,7 @@ export type Database = {
           location: string | null
           logo_url: string | null
           name: string
+          slug: string | null
           website: string | null
         }
         Insert: {
@@ -237,6 +238,7 @@ export type Database = {
           location?: string | null
           logo_url?: string | null
           name: string
+          slug?: string | null
           website?: string | null
         }
         Update: {
@@ -249,6 +251,7 @@ export type Database = {
           location?: string | null
           logo_url?: string | null
           name?: string
+          slug?: string | null
           website?: string | null
         }
         Relationships: []
@@ -805,6 +808,7 @@ export type Database = {
           applied_at: string
           id: string
           job_id: string
+          source: string | null
           status: Database["public"]["Enums"]["application_status"] | null
           user_id: string
         }
@@ -814,6 +818,7 @@ export type Database = {
           applied_at?: string
           id?: string
           job_id: string
+          source?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
           user_id: string
         }
@@ -823,6 +828,7 @@ export type Database = {
           applied_at?: string
           id?: string
           job_id?: string
+          source?: string | null
           status?: Database["public"]["Enums"]["application_status"] | null
           user_id?: string
         }
@@ -1466,6 +1472,7 @@ export type Database = {
           phone: string | null
           portfolio_url: string | null
           resume_url: string
+          source: string | null
           status: string | null
         }
         Insert: {
@@ -1485,6 +1492,7 @@ export type Database = {
           phone?: string | null
           portfolio_url?: string | null
           resume_url: string
+          source?: string | null
           status?: string | null
         }
         Update: {
@@ -1504,6 +1512,7 @@ export type Database = {
           phone?: string | null
           portfolio_url?: string | null
           resume_url?: string
+          source?: string | null
           status?: string | null
         }
         Relationships: [
