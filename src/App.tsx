@@ -52,6 +52,8 @@ const App = () => (
               <Route path="/profile/:userId?" element={<Profile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/notifications" element={<Notifications />} />
+              {/* External careers apply page — works independently */}
+              <Route path="/apply/:companySlug/:jobId" element={<ExternalApply />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
