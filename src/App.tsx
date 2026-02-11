@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
+import ExternalApply from "./pages/ExternalApply";
 
 const queryClient = new QueryClient();
 
