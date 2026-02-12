@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,16 +9,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Loader2, CheckCircle2, Upload, FileText, X, Linkedin, MapPin, Briefcase,
+  Loader2, CheckCircle2, Upload, FileText, X, Linkedin, MapPin, Briefcase, ArrowLeft
 } from 'lucide-react';
 
 interface JobInfo {
+  id: string;
   title: string;
   description: string;
-  responsibilities: string;
   location: string;
-  employmentType: string;
-  companySlug: string;
+  type: string;
+  company_id: string;
 }
 
 export default function ExternalApply() {
@@ -25,11 +26,12 @@ export default function ExternalApply() {
   const { toast } = useToast();
 
   const [job, setJob] = useState<JobInfo | null>(null);
+  const [companyName, setCompanyName] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   // Form state
-  const [candidateName, setCandidateName] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
@@ -49,19 +51,30 @@ export default function ExternalApply() {
   const fetchJobData = async () => {
     setPageLoading(true);
     try {
-      // Fetch job using the new internal/public API
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api/jobs/${jobId}`,
-        { headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
-      );
+      // Fetch job directly using Supabase
+      const { data: jobData, error: jobErr } = await supabase
+        .from('jobs')
+        .select(`
+          id, title, description, location, type, company_id,
+          companies(name, slug)
+        `)
+        .eq('id', jobId)
+        .eq('is_published', true)
+        .single();
 
-      if (!res.ok) {
+      if (jobErr || !jobData) {
         setNotFound(true);
         return;
       }
 
-      const result = await res.json();
-      setJob(result);
+      // Verify slug matches if provided
+      if (companySlug !== (jobData.companies as any)?.slug) {
+        setNotFound(true);
+        return;
+      }
+
+      setJob(jobData as any);
+      setCompanyName((jobData.companies as any)?.name || '');
     } catch (err) {
       console.error("Error fetching job:", err);
       setNotFound(true);
@@ -82,7 +95,7 @@ export default function ExternalApply() {
   };
 
   const handleSubmit = async () => {
-    if (!candidateName.trim() || !email.trim()) {
+    if (!name.trim() || !email.trim()) {
       toast({ title: 'Name and email are required', variant: 'destructive' });
       return;
     }
@@ -110,12 +123,11 @@ export default function ExternalApply() {
       const { error: insertErr } = await supabase.from('applications').insert({
         job_id: jobId!,
         company_slug: companySlug!,
-        candidate_name: candidateName.trim(),
+        name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || null,
         resume_url: urlData.publicUrl,
-        linkedin_url: linkedinUrl.trim() || null,
-        source: 'careers_page', // Requirement: source = "careers_page"
+        linkedin_url: linkedinUrl.trim() || null
       });
 
       if (insertErr) throw insertErr;
@@ -145,6 +157,9 @@ export default function ExternalApply() {
           <CardContent className="py-12 text-center">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Job Not Found</h2>
             <p className="text-slate-600">The position you're looking for might have been closed or doesn't exist.</p>
+            <Button asChild className="mt-6" variant="outline">
+              <Link to="/">Back to Home</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -161,9 +176,11 @@ export default function ExternalApply() {
             </div>
             <h2 className="text-3xl font-bold text-slate-900 mb-4">Application Sent!</h2>
             <p className="text-slate-600 mb-8">
-              Thank you for applying for the <strong>{job?.title}</strong> role. We've received your details and will be in touch soon.
+              Thank you for applying for the <strong>{job?.title}</strong> role at {companyName}. We've received your details and will be in touch soon.
             </p>
-            <Button variant="outline" onClick={() => window.location.reload()}>Apply for another role</Button>
+            <Button asChild variant="outline">
+              <Link to={`/company/${companySlug}`}>See other roles</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -174,39 +191,31 @@ export default function ExternalApply() {
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-xl tracking-tight text-slate-900">Nexacore <span className="text-indigo-600">Careers</span></span>
-          </div>
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Powered by HireLoom</span>
+          <Link to={`/company/${companySlug}`} className="flex items-center gap-2 group">
+            <ArrowLeft className="h-4 w-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+            <span className="font-bold text-xl tracking-tight text-slate-900">{companyName} <span className="text-indigo-600">Careers</span></span>
+          </Link>
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-widest hidden sm:inline">Powered by HireLoom</span>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Info */}
           <div className="lg:col-span-2 space-y-8">
             <section>
               <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-0">{job?.employmentType}</Badge>
+                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-0">{job?.type}</Badge>
                 <Badge variant="outline" className="text-slate-500 border-slate-200">{job?.location}</Badge>
               </div>
               <h1 className="text-4xl font-extrabold text-slate-900 mb-6">{job?.title}</h1>
 
               <div className="prose prose-slate max-w-none">
-                <h3 className="text-xl font-bold text-slate-800">About the role</h3>
-                <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">{job?.description}</p>
-
-                {job?.responsibilities && (
-                  <>
-                    <h3 className="text-xl font-bold text-slate-800 mt-8">Responsibilities</h3>
-                    <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">{job.responsibilities}</p>
-                  </>
-                )}
+                <h3 className="text-xl font-bold text-slate-800">Job Description</h3>
+                <p className="text-md text-slate-600 whitespace-pre-wrap leading-relaxed">{job?.description}</p>
               </div>
             </section>
           </div>
 
-          {/* Form Side */}
           <div className="lg:col-span-1">
             <Card className="sticky top-24 shadow-xl border-0 overflow-hidden">
               <div className="h-2 bg-indigo-600" />
@@ -219,8 +228,8 @@ export default function ExternalApply() {
                   <Input
                     id="name"
                     placeholder="Jane Doe"
-                    value={candidateName}
-                    onChange={(e) => setCandidateName(e.target.value)}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     className="border-slate-200 focus:ring-indigo-500"
                   />
                 </div>
@@ -250,7 +259,7 @@ export default function ExternalApply() {
 
                 <div className="space-y-2">
                   <Label htmlFor="linkedin" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                    <Linkedin className="h-4 w-4 text-[#0077b5]" /> LinkedIn URL
+                    <Linkedin className="h-4 w-4 text-[#0077b5]" /> LinkedIn URL (Optional)
                   </Label>
                   <Input
                     id="linkedin"
@@ -321,10 +330,10 @@ export default function ExternalApply() {
         </div>
       </div>
 
-      <footer className="py-12 border-t bg-white">
+      <footer className="py-12 border-t mt-20 bg-white">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-slate-500">
-            &copy; {new Date().getFullYear()} Nexacore. All rights reserved.
+            &copy; {new Date().getFullYear()} {companyName}. All rights reserved.
           </p>
           <p className="text-xs text-slate-400 mt-2 flex items-center justify-center gap-1">
             Technology by <span className="font-bold text-indigo-600">HireLoom</span>

@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, EyeOff, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Edit, Eye, EyeOff, Users, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 interface Job {
   id: string;
@@ -19,6 +20,7 @@ interface Job {
   created_at: string;
   is_published: boolean | null;
   visibility: string | null;
+  company_id?: string;
 }
 
 interface JobListProps {
@@ -34,29 +36,32 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
   const [jobApps, setJobApps] = useState<any[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
+  const [companySlug, setCompanySlug] = useState<string | null>(null);
 
   useEffect(() => {
-    if (jobs.length > 0) fetchAppCounts();
+    if (jobs.length > 0) {
+      fetchAppCounts();
+      fetchCompanySlug();
+    }
   }, [jobs]);
+
+  const fetchCompanySlug = async () => {
+    if (jobs[0]?.company_id) {
+      const { data } = await supabase.from('companies').select('slug').eq('id', jobs[0].company_id).single();
+      if (data) setCompanySlug(data.slug);
+    }
+  };
 
   const fetchAppCounts = async () => {
     const jobIds = jobs.map(j => j.id);
-
-    // Fetch counts from both tables
-    const { data: pubApps } = await supabase
-      .from('public_applications')
-      .select('job_id')
-      .in('job_id', jobIds);
-
-    const { data: authApps } = await supabase
-      .from('job_applications')
+    const { data: apps } = await supabase
+      .from('applications')
       .select('job_id')
       .in('job_id', jobIds);
 
     const counts: Record<string, number> = {};
     jobIds.forEach(id => { counts[id] = 0; });
-    pubApps?.forEach(a => { counts[a.job_id] = (counts[a.job_id] || 0) + 1; });
-    authApps?.forEach(a => { counts[a.job_id] = (counts[a.job_id] || 0) + 1; });
+    apps?.forEach(a => { counts[a.job_id] = (counts[a.job_id] || 0) + 1; });
     setAppCounts(counts);
   };
 
@@ -69,30 +74,13 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
     setExpandedJob(jobId);
     setAppsLoading(true);
 
-    const { data: pubApps } = await supabase
-      .from('public_applications')
-      .select('id, full_name, email, resume_url, source, status, created_at')
+    const { data } = await supabase
+      .from('applications')
+      .select('*')
       .eq('job_id', jobId)
       .order('created_at', { ascending: false });
 
-    const { data: authApps } = await supabase
-      .from('job_applications')
-      .select('id, applicant_name, applicant_email, status, applied_at, source')
-      .eq('job_id', jobId)
-      .order('applied_at', { ascending: false });
-
-    const combined = [
-      ...(pubApps || []).map(a => ({
-        id: a.id, name: a.full_name, email: a.email, resumeUrl: a.resume_url,
-        source: a.source || 'direct', status: a.status, date: a.created_at, type: 'public' as const,
-      })),
-      ...(authApps || []).map(a => ({
-        id: a.id, name: a.applicant_name, email: a.applicant_email, resumeUrl: null,
-        source: (a as any).source || 'direct', status: a.status, date: a.applied_at, type: 'auth' as const,
-      })),
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    setJobApps(combined);
+    setJobApps(data || []);
     setAppsLoading(false);
   };
 
@@ -105,7 +93,7 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
       <Card>
         <CardContent className="pt-6">
           <p className="text-center py-8 text-muted-foreground">
-            You haven't posted any jobs yet. Click on the "Post Job" tab to create your first job posting.
+            You haven't posted any jobs yet. Check the "Post Job" tab.
           </p>
         </CardContent>
       </Card>
@@ -145,10 +133,13 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Switch
-                  checked={job.is_published || false}
-                  onCheckedChange={() => onTogglePublish(job.id, job.is_published)}
-                />
+                {job.is_published && companySlug && (
+                  <Button size="sm" variant="ghost" asChild title="View on Careers Page">
+                    <Link to={`/company/${companySlug}/${job.id}`} target="_blank">
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={() => onEdit(job)}>
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -159,12 +150,7 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-2">
-              {job.salary && `Salary: ${job.salary} • `}
-              Category: {job.category}
-              {job.employee_range && ` • Company Size: ${job.employee_range}`}
-            </p>
-            <p className="text-sm line-clamp-3">{job.description}</p>
+            <p className="text-sm line-clamp-2 text-muted-foreground">{job.description}</p>
 
             <div className="flex items-center justify-between mt-4">
               <p className="text-xs text-muted-foreground">
@@ -175,51 +161,38 @@ export const JobList = ({ jobs, loading, onEdit, onDelete, onTogglePublish }: Jo
                   variant="ghost"
                   size="sm"
                   onClick={() => toggleExpand(job.id)}
-                  className="text-xs"
+                  className="text-xs font-bold text-primary"
                 >
                   {expandedJob === job.id ? (
                     <>Hide Applications <ChevronUp className="h-3 w-3 ml-1" /></>
                   ) : (
-                    <>View Applications <ChevronDown className="h-3 w-3 ml-1" /></>
+                    <>View {appCounts[job.id]} Application{appCounts[job.id] !== 1 ? 's' : ''} <ChevronDown className="h-3 w-3 ml-1" /></>
                   )}
                 </Button>
               )}
             </div>
 
-            {/* Inline applications list */}
             {expandedJob === job.id && (
               <div className="mt-4 border-t pt-4 space-y-3">
                 {appsLoading ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Loading applications…</p>
+                  <p className="text-sm text-muted-foreground text-center py-4 animate-pulse">Loading applications...</p>
                 ) : jobApps.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No applications found.</p>
                 ) : (
                   jobApps.map(app => (
-                    <div key={app.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+                    <div key={app.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
                       <div className="space-y-0.5">
-                        <p className="font-medium text-sm">{app.name}</p>
+                        <p className="font-bold text-sm tracking-tight">{app.name}</p>
                         <p className="text-xs text-muted-foreground">{app.email}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-[10px]">
-                            {app.source === 'external_careers' ? '🌐 Careers Page' : '📋 Direct'}
-                          </Badge>
-                          <Badge className={
-                            app.status === 'applied' ? 'bg-blue-500/10 text-blue-600' :
-                            app.status === 'shortlisted' ? 'bg-green-500/10 text-green-600' :
-                            'bg-gray-500/10 text-gray-600'
-                          }>
-                            {app.status || 'applied'}
-                          </Badge>
-                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {app.resumeUrl && (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={app.resumeUrl} target="_blank" rel="noreferrer">Resume</a>
+                      <div className="flex items-center gap-3">
+                        {app.resume_url && (
+                          <Button size="sm" variant="outline" className="h-8 text-xs bg-white" asChild>
+                            <a href={app.resume_url} target="_blank" rel="noreferrer">Resume</a>
                           </Button>
                         )}
-                        <span className="text-[10px] text-muted-foreground">
-                          {new Date(app.date).toLocaleDateString()}
+                        <span className="text-[10px] font-medium text-slate-400">
+                          {new Date(app.created_at).toLocaleDateString()}
                         </span>
                       </div>
                     </div>

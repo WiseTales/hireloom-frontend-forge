@@ -21,6 +21,7 @@ import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import ExternalApply from "./pages/ExternalApply";
+import HostedCareersPage from "./pages/HostedCareersPage";
 
 const queryClient = new QueryClient();
 
@@ -52,8 +53,11 @@ const App = () => (
               <Route path="/profile/:userId?" element={<Profile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/notifications" element={<Notifications />} />
-              {/* External careers apply page — works independently */}
-              <Route path="/apply/:companySlug/:jobId" element={<ExternalApply />} />
+
+              {/* Hosted Careers Pages */}
+              <Route path="/company/:companySlug" element={<HostedCareersPage />} />
+              <Route path="/company/:companySlug/:jobId" element={<ExternalApply />} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
