@@ -4,7 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Eye, EyeOff, ExternalLink, Users } from 'lucide-react';
+import { Eye, EyeOff, ExternalLink, Users, Settings, Briefcase, BarChart3, ShieldCheck, UserPlus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { ApplicantsList } from '@/components/recruiter/ApplicantsList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -134,11 +137,21 @@ const AdminDashboard = () => {
 
         <Tabs defaultValue="stats" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="stats">Platform Stats</TabsTrigger>
-            <TabsTrigger value="recruiters">Recruiters & Jobs</TabsTrigger>
-            <TabsTrigger value="applicants">
-              All Applicants
-              <Users className="h-4 w-4 ml-2" />
+            <TabsTrigger value="stats" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="recruiters" className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4" />
+              Jobs
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              User Management
+            </TabsTrigger>
+            <TabsTrigger value="branding" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Company Branding
             </TabsTrigger>
           </TabsList>
 
@@ -271,8 +284,73 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="applicants">
-            <ApplicantsList />
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Team Accounts</CardTitle>
+                <CardDescription>Create and manage HR and hiring manager accounts for your organization.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center p-4 border rounded-lg bg-slate-50">
+                  <div>
+                    <p className="font-bold">Total Active Users</p>
+                    <p className="text-sm text-muted-foreground">{recruitersData.length + 1} users in your company</p>
+                  </div>
+                  <Button className="gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Invite Member
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {/* Mock user list */}
+                  {recruitersData.map((data) => (
+                    <div key={data.recruiter.id} className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          {data.recruiter.full_name[0]}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{data.recruiter.full_name}</p>
+                          <p className="text-xs text-muted-foreground">{data.recruiter.email}</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline">Recruiter</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="branding">
+            <Card>
+              <CardHeader>
+                <CardTitle>Company Branding</CardTitle>
+                <CardDescription>Customize how Hireloom looks for your candidates and team.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label>Company Name</Label>
+                    <Input defaultValue="Hireloom Corp" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Primary Color</Label>
+                    <div className="flex gap-2">
+                      <div className="h-8 w-8 rounded bg-[#1e293b] border" />
+                      <Input defaultValue="#1e293b" className="font-mono" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Career Page Logo</Label>
+                    <Button variant="outline" className="w-full border-dashed py-8">
+                      Change Logo
+                    </Button>
+                  </div>
+                </div>
+                <Button className="w-full">Save Changes</Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

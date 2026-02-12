@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Sparkles, Loader2, Link, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { JobChannelSimulator } from './JobChannelSimulator';
+import { Sparkles, Loader2, Link, AlertCircle, Globe, Linkedin, Send } from 'lucide-react';
 
 interface JobFormData {
   title: string;
@@ -31,13 +32,13 @@ interface JobPostFormProps {
   onCancelEdit: () => void;
 }
 
-export const JobPostForm = ({ 
-  formData, 
-  setFormData, 
-  onSubmit, 
-  submitting, 
-  editingJob, 
-  onCancelEdit 
+export const JobPostForm = ({
+  formData,
+  setFormData,
+  onSubmit,
+  submitting,
+  editingJob,
+  onCancelEdit
 }: JobPostFormProps) => {
   const { toast } = useToast();
   const [jobUrl, setJobUrl] = useState('');
@@ -112,7 +113,7 @@ export const JobPostForm = ({
       if (extracted.education_requirements) {
         description += `Education: ${extracted.education_requirements}\n`;
       }
-      
+
       if (description.trim()) {
         newFormData.description = description.trim();
         filledFields.add('description');
@@ -133,7 +134,7 @@ export const JobPostForm = ({
           'intern': 'Internship'
         };
         const normalizedType = extracted.employment_type.toLowerCase();
-        const mappedType = typeMap[normalizedType] || 
+        const mappedType = typeMap[normalizedType] ||
           Object.entries(typeMap).find(([key]) => normalizedType.includes(key))?.[1];
         if (mappedType) {
           newFormData.type = mappedType;
@@ -164,8 +165,8 @@ export const JobPostForm = ({
   };
 
   const getFieldClassName = (fieldName: string) => {
-    return autofilledFields.has(fieldName) 
-      ? 'ring-2 ring-primary/30 bg-primary/5 transition-all duration-300' 
+    return autofilledFields.has(fieldName)
+      ? 'ring-2 ring-primary/30 bg-primary/5 transition-all duration-300'
       : '';
   };
 
@@ -174,8 +175,8 @@ export const JobPostForm = ({
       <CardHeader>
         <CardTitle>{editingJob ? 'Edit Job' : 'Post a New Job'}</CardTitle>
         <CardDescription>
-          {editingJob 
-            ? 'Update the job details below' 
+          {editingJob
+            ? 'Update the job details below'
             : 'Paste a job posting URL to auto-extract details, or fill in manually'
           }
         </CardDescription>
@@ -191,7 +192,7 @@ export const JobPostForm = ({
             <p className="text-sm text-muted-foreground mb-4">
               Paste your existing job posting URL and we'll automatically extract all the details.
             </p>
-            
+
             <div className="flex gap-3">
               <div className="relative flex-1">
                 <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -204,7 +205,7 @@ export const JobPostForm = ({
                   disabled={autofilling}
                 />
               </div>
-              <Button 
+              <Button
                 type="button"
                 onClick={handleAutofill}
                 disabled={autofilling || !jobUrl.trim()}
@@ -239,139 +240,150 @@ export const JobPostForm = ({
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <form onSubmit={onSubmit} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">Job Title *</Label>
+                <Input
+                  id="title"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="e.g. Senior Software Engineer"
+                  className={getFieldClassName('title')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company">Company Name *</Label>
+                <Input
+                  id="company"
+                  required
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  placeholder="e.g. Tech Corp"
+                  className={getFieldClassName('company')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location *</Label>
+                <Input
+                  id="location"
+                  required
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="e.g. New York, NY or Remote"
+                  className={getFieldClassName('location')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="salary">Salary Range</Label>
+                <Input
+                  id="salary"
+                  value={formData.salary}
+                  onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                  placeholder="e.g. $80k - $120k"
+                  className={getFieldClassName('salary')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type">Job Type *</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) => setFormData({ ...formData, type: value })}
+                >
+                  <SelectTrigger className={getFieldClassName('type')}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Full-time">Full-time</SelectItem>
+                    <SelectItem value="Part-time">Part-time</SelectItem>
+                    <SelectItem value="Contract">Contract</SelectItem>
+                    <SelectItem value="Internship">Internship</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="IT/Tech">IT/Tech</SelectItem>
+                    <SelectItem value="Sales/Marketing">Sales/Marketing</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="Healthcare">Healthcare</SelectItem>
+                    <SelectItem value="Engineering">Engineering</SelectItem>
+                    <SelectItem value="Design">Design</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employee_range">Company Size *</Label>
+                <Select
+                  value={formData.employee_range}
+                  onValueChange={(value) => setFormData({ ...formData, employee_range: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1-10">1-10 employees</SelectItem>
+                    <SelectItem value="11-50">11-50 employees</SelectItem>
+                    <SelectItem value="51-200">51-200 employees</SelectItem>
+                    <SelectItem value="201-500">201-500 employees</SelectItem>
+                    <SelectItem value="501-1000">501-1000 employees</SelectItem>
+                    <SelectItem value="1000+">1000+ employees</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="title">Job Title *</Label>
-              <Input
-                id="title"
+              <Label htmlFor="description">Job Description *</Label>
+              <Textarea
+                id="description"
                 required
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g. Senior Software Engineer"
-                className={getFieldClassName('title')}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Describe the role, responsibilities, requirements..."
+                rows={8}
+                className={getFieldClassName('description')}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="company">Company Name *</Label>
-              <Input
-                id="company"
-                required
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                placeholder="e.g. Tech Corp"
-                className={getFieldClassName('company')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                required
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g. New York, NY or Remote"
-                className={getFieldClassName('location')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="salary">Salary Range</Label>
-              <Input
-                id="salary"
-                value={formData.salary}
-                onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                placeholder="e.g. $80k - $120k"
-                className={getFieldClassName('salary')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="type">Job Type *</Label>
-              <Select 
-                value={formData.type} 
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-              >
-                <SelectTrigger className={getFieldClassName('type')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Full-time">Full-time</SelectItem>
-                  <SelectItem value="Part-time">Part-time</SelectItem>
-                  <SelectItem value="Contract">Contract</SelectItem>
-                  <SelectItem value="Internship">Internship</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="IT/Tech">IT/Tech</SelectItem>
-                  <SelectItem value="Sales/Marketing">Sales/Marketing</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
-                  <SelectItem value="Healthcare">Healthcare</SelectItem>
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Design">Design</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="employee_range">Company Size *</Label>
-              <Select 
-                value={formData.employee_range} 
-                onValueChange={(value) => setFormData({ ...formData, employee_range: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-10">1-10 employees</SelectItem>
-                  <SelectItem value="11-50">11-50 employees</SelectItem>
-                  <SelectItem value="51-200">51-200 employees</SelectItem>
-                  <SelectItem value="201-500">201-500 employees</SelectItem>
-                  <SelectItem value="501-1000">501-1000 employees</SelectItem>
-                  <SelectItem value="1000+">1000+ employees</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Job Description *</Label>
-            <Textarea
-              id="description"
-              required
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe the role, responsibilities, requirements..."
-              rows={8}
-              className={getFieldClassName('description')}
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Saving...' : editingJob ? 'Update Job' : 'Post Job'}
-            </Button>
-            {editingJob && (
-              <Button type="button" variant="outline" onClick={onCancelEdit}>
-                Cancel Edit
+            <div className="flex gap-4">
+              <Button type="submit" disabled={submitting} className="flex-1 gap-2">
+                {submitting ? 'Saving...' : editingJob ? 'Update Job' : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Post Job
+                  </>
+                )}
               </Button>
-            )}
+              {editingJob && (
+                <Button type="button" variant="outline" onClick={onCancelEdit}>
+                  Cancel Edit
+                </Button>
+              )}
+            </div>
+          </form>
+
+          <div className="sticky top-6">
+            <JobChannelSimulator job={formData} />
           </div>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

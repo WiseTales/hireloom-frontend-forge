@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,7 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { JobPostForm } from '@/components/recruiter/JobPostForm';
 import { JobList } from '@/components/recruiter/JobList';
 import { ApplicantsList } from '@/components/recruiter/ApplicantsList';
-import { Users } from 'lucide-react';
+import { PipelineKanban } from '@/components/recruiter/pipeline/PipelineKanban';
+import { Users, LayoutGrid, PlusCircle } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -44,11 +45,7 @@ const RecruiterDashboard = () => {
     is_published: true
   });
 
-  useEffect(() => {
-    fetchJobs();
-  }, [user]);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -68,7 +65,11 @@ const RecruiterDashboard = () => {
       setJobs(data || []);
     }
     setLoading(false);
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,13 +214,26 @@ const RecruiterDashboard = () => {
 
         <Tabs defaultValue="post" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="post">Post Job</TabsTrigger>
-            <TabsTrigger value="history">My Jobs ({jobs.length})</TabsTrigger>
-            <TabsTrigger value="applicants" className="relative">
+            <TabsTrigger value="post" className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Post Job
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              My Jobs ({jobs.length})
+            </TabsTrigger>
+            <TabsTrigger value="pipeline" className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Pipeline
+            </TabsTrigger>
+            <TabsTrigger value="applicants" className="relative flex items-center gap-2">
               Applicants
-              <Users className="h-3 w-3 ml-2" />
+              <Users className="h-4 w-4" />
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="pipeline" className="h-[calc(100vh-200px)]">
+            <PipelineKanban />
+          </TabsContent>
 
           <TabsContent value="post">
             <JobPostForm
