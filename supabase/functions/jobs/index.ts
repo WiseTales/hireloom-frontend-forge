@@ -2,10 +2,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://nexacore128.vercel.app",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
@@ -18,14 +17,14 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);
 
-    // We expect /jobs/:companySlug
-    // In Supabase, the path might be /functions/v1/jobs/:companySlug
+    // Path detection: /jobs/[slug]
     const jobsIndex = pathParts.indexOf('jobs');
-    const companySlug = (jobsIndex !== -1 && pathParts.length > jobsIndex + 1) ? pathParts[jobsIndex + 1] : null;
+    const slugInPath = (jobsIndex !== -1 && pathParts.length > jobsIndex + 1) ? pathParts[jobsIndex + 1] : null;
+    const companySlug = slugInPath || url.searchParams.get("companySlug");
 
     if (!companySlug) {
       return new Response(
-        JSON.stringify({ error: "companySlug is required in URL path" }),
+        JSON.stringify({ error: "companySlug is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -35,7 +34,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // First find company to get its ID
+    // Find company
     const { data: company, error: companyError } = await supabase
       .from("companies")
       .select("id")
@@ -64,7 +63,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const publicJobs = (jobs || []).map((j) => ({
+    // Map to requested schema
+    const response = (jobs || []).map((j) => ({
       id: j.id,
       title: j.title,
       location: j.location,
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }));
 
     return new Response(
-      JSON.stringify(publicJobs),
+      JSON.stringify(response),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

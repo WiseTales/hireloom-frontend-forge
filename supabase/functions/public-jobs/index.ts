@@ -1,24 +1,38 @@
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://nexacore128.vercel.app",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const url = new URL(req.url);
-    const companySlug = url.searchParams.get("companySlug");
+    const pathParts = url.pathname.split('/').filter(Boolean);
+
+    // Support both:
+    // 1. Path-based: /public-jobs/[companySlug]
+    // 2. Query-based: /public-jobs?companySlug=[companySlug]
+    let companySlug = url.searchParams.get("companySlug");
+
+    if (!companySlug) {
+      // In Supabase, the path is usually /functions/v1/public-jobs/...
+      const publicJobsIndex = pathParts.indexOf('public-jobs');
+      if (publicJobsIndex !== -1 && pathParts.length > publicJobsIndex + 1) {
+        companySlug = pathParts[publicJobsIndex + 1];
+      }
+    }
 
     if (!companySlug) {
       return new Response(
-        JSON.stringify({ error: "companySlug query parameter is required" }),
+        JSON.stringify({ error: "companySlug is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -28,10 +42,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Look up company by slug
+    // Find company
     const { data: company, error: companyError } = await supabase
       .from("companies")
-      .select("id, name, logo_url, description, website")
+      .select("id")
       .eq("slug", companySlug)
       .single();
 
@@ -42,13 +56,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch published external jobs for this company
+    // Fetch published jobs for this company
     const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
-      .select("id, title, description, location, type, category, salary, is_remote, location_type, work_type, experience_level, created_at")
+      .select("id, title, location, type, description")
       .eq("company_id", company.id)
       .eq("is_published", true)
-      .eq("visibility", "external")
       .order("created_at", { ascending: false });
 
     if (jobsError) {
@@ -58,37 +71,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Map to public-safe schema
-    const publicJobs = (jobs || []).map((j) => ({
-      jobId: j.id,
+    // Map to requested schema
+    const response = (jobs || []).map((j) => ({
+      id: j.id,
       title: j.title,
-      description: j.description,
       location: j.location,
       employmentType: j.type,
-      category: j.category,
-      salary: j.salary,
-      isRemote: j.is_remote,
-      locationType: j.location_type,
-      workType: j.work_type,
-      experienceLevel: j.experience_level,
-      postedAt: j.created_at,
+      shortDescription: j.description.length > 200 ? j.description.substring(0, 200) + "..." : j.description,
     }));
 
     return new Response(
-      JSON.stringify({
-        company: {
-          name: company.name,
-          logo: company.logo_url,
-          description: company.description,
-          website: company.website,
-        },
-        jobs: publicJobs,
-      }),
+      JSON.stringify(response),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: "Internal server error", details: err.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

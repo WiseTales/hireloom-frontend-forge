@@ -2,10 +2,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://nexacore128.vercel.app",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
@@ -18,61 +17,24 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);
 
-    // In Supabase, the first parts might be /functions/v1/public-api
-    // We want to detect if there's a jobId after 'jobs'
+    // Path detection: /public-api/jobs/[slug]
     const jobsIndex = pathParts.indexOf('jobs');
-    const jobId = (jobsIndex !== -1 && pathParts.length > jobsIndex + 1) ? pathParts[jobsIndex + 1] : null;
+    const slugInPath = (jobsIndex !== -1 && pathParts.length > jobsIndex + 1) ? pathParts[jobsIndex + 1] : null;
+    const companySlug = slugInPath || url.searchParams.get("companySlug");
+
+    if (!companySlug) {
+      return new Response(
+        JSON.stringify({ error: "companySlug is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Part 2: GET /api/public/jobs/:jobId
-    if (jobId) {
-      const { data: job, error } = await supabase
-        .from("jobs")
-        .select(`
-          title,
-          description,
-          location,
-          type,
-          companies(slug)
-        `)
-        .eq("id", jobId)
-        .eq("is_published", true)
-        .single();
-
-      if (error || !job) {
-        return new Response(
-          JSON.stringify({ error: "Job not found or not published" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({
-          title: job.title,
-          description: job.description,
-          responsibilities: "", // Schema doesn't have a separate field, using empty as placeholder
-          location: job.location,
-          employmentType: job.type,
-          companySlug: job.companies?.slug || "",
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Part 1: GET /api/public/jobs?companySlug=:slug
-    const companySlug = url.searchParams.get("companySlug");
-    if (!companySlug) {
-      return new Response(
-        JSON.stringify({ error: "companySlug query parameter is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // First find company to get its ID
+    // Find company
     const { data: company, error: companyError } = await supabase
       .from("companies")
       .select("id")
@@ -86,9 +48,10 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch published jobs for this company
     const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
-      .select("id, title, location, type, description, created_at")
+      .select("id, title, location, type, description")
       .eq("company_id", company.id)
       .eq("is_published", true)
       .order("created_at", { ascending: false });
@@ -100,17 +63,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    const publicJobs = (jobs || []).map((j) => ({
+    // Map to requested schema
+    const response = (jobs || []).map((j) => ({
       id: j.id,
       title: j.title,
       location: j.location,
       employmentType: j.type,
-      shortDescription: j.description.length > 160 ? j.description.substring(0, 160) + "..." : j.description,
-      createdAt: j.created_at,
+      shortDescription: j.description.length > 200 ? j.description.substring(0, 200) + "..." : j.description,
     }));
 
     return new Response(
-      JSON.stringify(publicJobs),
+      JSON.stringify(response),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
