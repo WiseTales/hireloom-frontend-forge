@@ -7,6 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * Public Jobs API for Hireloom
+ * Handles: GET /api/public/jobs/[companySlug]
+ * Returns status 200 with [] even on failure to prevent downstream 500s.
+ */
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -17,32 +22,45 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);
 
-    // Support both:
-    // 1. Path-based: /public-jobs/[companySlug]
-    // 2. Query-based: /public-jobs?companySlug=[companySlug]
+    // 1. Identify companySlug from path or query
     let companySlug = url.searchParams.get("companySlug");
 
     if (!companySlug) {
-      // In Supabase, the path is usually /functions/v1/public-jobs/...
+      // Logic for path: .../public-jobs/[companySlug]
       const publicJobsIndex = pathParts.indexOf('public-jobs');
       if (publicJobsIndex !== -1 && pathParts.length > publicJobsIndex + 1) {
         companySlug = pathParts[publicJobsIndex + 1];
+      } else {
+        // Fallback: check if the last part of the path is the slug if not 'public-jobs'
+        const lastPart = pathParts[pathParts.length - 1];
+        if (lastPart && lastPart !== 'public-jobs') {
+          companySlug = lastPart;
+        }
       }
     }
 
     if (!companySlug) {
-      return new Response(
-        JSON.stringify({ error: "companySlug is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("DEBUG: No companySlug found in path or query");
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    // Find company
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("CRITICAL: Supabase environment variables missing");
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // 2. Resolve company ID from slug
     const { data: company, error: companyError } = await supabase
       .from("companies")
       .select("id")
@@ -50,13 +68,14 @@ Deno.serve(async (req) => {
       .single();
 
     if (companyError || !company) {
-      return new Response(
-        JSON.stringify({ error: "Company not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.warn(`Company not found for slug: ${companySlug}`);
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    // Fetch published jobs for this company
+    // 3. Fetch published jobs
     const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
       .select("id, title, location, type, description")
@@ -65,30 +84,35 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false });
 
     if (jobsError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch jobs" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("Database error fetching jobs:", jobsError);
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    // Map to requested schema
+    // 4. Transform to requested schema
     const response = (jobs || []).map((j) => ({
       id: j.id,
       title: j.title,
       location: j.location,
-      employmentType: j.type,
-      shortDescription: j.description.length > 200 ? j.description.substring(0, 200) + "..." : j.description,
+      employmentType: j.type, // Map 'type' to 'employmentType'
+      shortDescription: j.description && j.description.length > 200
+        ? j.description.substring(0, 200) + "..."
+        : (j.description || ""),
     }));
 
-    return new Response(
-      JSON.stringify(response),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
 
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("Global API Error caught in try/catch:", err);
+    // Requirement fulfill: Return 200 and [] on failure
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
 });

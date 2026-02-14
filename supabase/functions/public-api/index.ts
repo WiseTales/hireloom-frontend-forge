@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,10 +22,10 @@ Deno.serve(async (req) => {
     const companySlug = slugInPath || url.searchParams.get("companySlug");
 
     if (!companySlug) {
-      return new Response(
-        JSON.stringify({ error: "companySlug is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     const supabase = createClient(
@@ -42,10 +41,10 @@ Deno.serve(async (req) => {
       .single();
 
     if (companyError || !company) {
-      return new Response(
-        JSON.stringify({ error: "Company not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // Fetch published jobs for this company
@@ -57,10 +56,10 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false });
 
     if (jobsError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch jobs" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // Map to requested schema
@@ -72,15 +71,15 @@ Deno.serve(async (req) => {
       shortDescription: j.description.length > 200 ? j.description.substring(0, 200) + "..." : j.description,
     }));
 
-    return new Response(
-      JSON.stringify(response),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
 
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
 });
