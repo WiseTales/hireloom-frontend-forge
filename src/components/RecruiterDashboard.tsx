@@ -77,12 +77,16 @@ const RecruiterDashboard = () => {
 
     setSubmitting(true);
 
+    const companySlug = formData.company.toLowerCase().replace(/\s+/g, "-");
+
     if (editingJob) {
       const { error } = await supabase
         .from('jobs')
         .update({
           title: formData.title,
           company: formData.company,
+          company_slug: companySlug,
+          status: "published",
           description: formData.description,
           location: formData.location,
           salary: formData.salary,
@@ -113,10 +117,13 @@ const RecruiterDashboard = () => {
         .from('jobs')
         .insert([{
           ...formData,
+          company_slug: companySlug,
+          status: "published",
           posted_by: user.id,
           visibility: formData.visibility as 'internal' | 'external',
           is_published: formData.is_published
         }]);
+
 
       if (error) {
         toast({

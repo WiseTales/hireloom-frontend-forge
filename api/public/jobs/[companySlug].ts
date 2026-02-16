@@ -1,17 +1,22 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+/**
+ * Public Jobs API Route
+ * Path: /api/public/jobs/[companySlug]
+ * Handles fetching published jobs for a specific company slug directly.
+ */
 export default async function handler(req: any, res: any) {
-  // CORS check (Standard practice for public APIs)
+  // CORS check
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Get companySlug from the dynamic route parameter [companySlug]
+  // Extract companySlug from params (req.query in Vercel)
   const { companySlug } = req.query;
 
   if (!companySlug) {
-    console.error("DEBUG: No companySlug provided in query");
+    console.error("DEBUG: No companySlug provided in request");
     return res.status(200).json([]);
   }
 
@@ -26,32 +31,24 @@ export default async function handler(req: any, res: any) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 1. Find company by slug
-    const { data: company, error: companyError } = await supabase
-      .from("companies")
-      .select("id")
-      .eq("slug", companySlug)
-      .single();
-
-    if (companyError || !company) {
-      console.warn(`Company not found: ${companySlug}`);
-      return res.status(200).json([]);
-    }
-
-    // 2. Fetch published jobs
+    // Filter by company_slug and status directly as requested
+    // This avoids relational issues if the company table link is broken
     const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
-      .select("id, title, location, type, description")
-      .eq("company_id", company.id)
-      .eq("is_published", true)
+      .select("id, title, location, type, description, company_slug, status")
+      .eq("company_slug", companySlug)
+      .eq("status", "published")
       .order("created_at", { ascending: false });
+
+    // Temporary debugging as requested
+    console.log("Fetched jobs for slug:", companySlug, jobs);
 
     if (jobsError) {
       console.error("Database error fetching jobs:", jobsError);
       return res.status(200).json([]);
     }
 
-    // 3. Map to requested schema
+    // Map to requested schema
     const response = (jobs || []).map((j: any) => ({
       id: j.id,
       title: j.title,
@@ -62,12 +59,11 @@ export default async function handler(req: any, res: any) {
         : (j.description || ""),
     }));
 
-    // Successful response
     return res.status(200).json(response);
 
   } catch (err) {
     console.error("Global API Error caught in handler:", err);
-    // Requirement fulfill: Never return 500, return 200 with []
+    // Standard fail-safe: return 200 with empty array
     return res.status(200).json([]);
   }
 }
