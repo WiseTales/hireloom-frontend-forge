@@ -25,14 +25,12 @@ interface Job {
 }
 
 const RecruiterDashboard = () => {
-  const { user } = useAuth();
+  const { user, companyId } = useAuth();
   const { toast } = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
-
-  const [companyId, setCompanyId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -68,29 +66,25 @@ const RecruiterDashboard = () => {
     setLoading(false);
   }, [user, toast]);
 
-  const fetchCompanyId = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('company_id')
-      .eq('id', user.id)
-      .single();
-
-    if (data?.company_id) {
-      setCompanyId(data.company_id);
-    }
-  }, [user]);
-
   useEffect(() => {
     fetchJobs();
-    fetchCompanyId();
-  }, [fetchJobs, fetchCompanyId]);
+  }, [fetchJobs]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     setSubmitting(true);
+
+    if (!companyId) {
+      toast({
+        title: 'Error',
+        description: 'Unauthorized - no company found for your profile. Please contact support.',
+        variant: 'destructive'
+      });
+      setSubmitting(false);
+      return;
+    }
 
     if (editingJob) {
       const { error } = await supabase

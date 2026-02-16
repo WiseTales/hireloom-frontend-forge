@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole | null;
+  companyId: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
@@ -22,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,14 +32,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Fetch user role when session changes
+
+        // Fetch user profile when session changes
         if (session?.user) {
           setTimeout(() => {
-            fetchUserRole(session.user.id);
+            fetchUserProfile(session.user.id);
           }, 0);
         } else {
           setUserRole(null);
+          setCompanyId(null);
           setLoading(false);
         }
       }
@@ -54,12 +57,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         return;
       }
-      
+
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        fetchUserRole(session.user.id);
+        fetchUserProfile(session.user.id);
       } else {
         setLoading(false);
       }
@@ -74,21 +77,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // 1. Fetch Role
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching user role:', error);
-      } else if (data) {
-        setUserRole(data.role as UserRole);
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+      } else if (roleData) {
+        setUserRole(roleData.role as UserRole);
+      }
+
+      // 2. Fetch Company ID from profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      } else if (profileData) {
+        setCompanyId(profileData.company_id);
       }
     } catch (error) {
-      console.error('Error fetching user role:', error);
+      console.error('Error fetching user profile:', error);
     } finally {
       setLoading(false);
     }
@@ -99,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email,
       password,
     });
-    
+
     if (error) throw error;
   };
 
@@ -108,9 +125,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (role === 'admin') {
       throw new Error('Admin registration is not allowed');
     }
-    
+
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -122,18 +139,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       },
     });
-    
+
     if (error) throw error;
   };
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    
+
     setUser(null);
     setSession(null);
     setUserRole(null);
-    
+    setCompanyId(null);
+
     // Clear localStorage
     localStorage.removeItem('hireloom_saved_jobs');
     localStorage.removeItem('hireloom_applied_jobs');
@@ -141,19 +159,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = async (permission: string): Promise<boolean> => {
     if (!user) return false;
-    
+
     try {
       // Type assertion needed because RPC function accepts enum type
       const { data, error } = await supabase.rpc('has_permission', {
         _user_id: user.id,
         _permission: permission as any
       });
-      
+
       if (error) {
         console.error('Error checking permission:', error);
         return false;
       }
-      
+
       return data ?? false;
     } catch (error) {
       console.error('Error checking permission:', error);
@@ -162,13 +180,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
+    <AuthContext.Provider value={{
+      user,
       session,
       userRole,
-      login, 
-      register, 
-      logout, 
+      companyId,
+      login,
+      register,
+      logout,
       isAuthenticated: !!user,
       loading,
       hasPermission
