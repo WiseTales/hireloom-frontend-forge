@@ -13,18 +13,51 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+
+    let companySlug = url.searchParams.get("companySlug");
+
+    if (!companySlug) {
+      const publicJobsIndex = pathParts.indexOf('public-jobs');
+      if (publicJobsIndex !== -1 && pathParts.length > publicJobsIndex + 1) {
+        companySlug = pathParts[publicJobsIndex + 1];
+      }
+    }
+
+    if (!companySlug) {
+      return new Response(JSON.stringify({ error: "Company slug is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // TEMPORARY: Remove all filtering for debugging
+    // 1. Find company by slug
+    const { data: company, error: companyError } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("slug", companySlug)
+      .single();
+
+    if (companyError || !company) {
+      return new Response(JSON.stringify({ error: "Company not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // 2. Fetch jobs by companyId and status
     const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
       .select("*")
+      .eq("company_id", company.id)
+      .eq("status", "published")
       .order("created_at", { ascending: false });
-
-    console.log("DEBUG: All Jobs in DB (Edge Function):", jobs);
 
     if (jobsError) {
       console.error("Database error:", jobsError);
@@ -42,8 +75,6 @@ Deno.serve(async (req) => {
       shortDescription: j.description && j.description.length > 200
         ? j.description.substring(0, 200) + "..."
         : (j.description || ""),
-      _debug_company_slug: j.company_slug,
-      _debug_status: j.status
     }));
 
     return new Response(JSON.stringify(response), {

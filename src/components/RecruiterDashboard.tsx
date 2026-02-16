@@ -32,9 +32,10 @@ const RecruiterDashboard = () => {
   const [submitting, setSubmitting] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
+  const [companyId, setCompanyId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     title: '',
-    company: '',
     description: '',
     location: '',
     salary: '',
@@ -67,9 +68,23 @@ const RecruiterDashboard = () => {
     setLoading(false);
   }, [user, toast]);
 
+  const fetchCompanyId = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    if (data?.company_id) {
+      setCompanyId(data.company_id);
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchJobs();
-  }, [fetchJobs]);
+    fetchCompanyId();
+  }, [fetchJobs, fetchCompanyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,15 +92,12 @@ const RecruiterDashboard = () => {
 
     setSubmitting(true);
 
-    const companySlug = formData.company.toLowerCase().replace(/\s+/g, "-");
-
     if (editingJob) {
       const { error } = await supabase
         .from('jobs')
         .update({
           title: formData.title,
-          company: formData.company,
-          company_slug: companySlug,
+          company_id: companyId,
           status: "published",
           description: formData.description,
           location: formData.location,
@@ -117,12 +129,13 @@ const RecruiterDashboard = () => {
         .from('jobs')
         .insert([{
           ...formData,
-          company_slug: companySlug,
+          company_id: companyId,
           status: "published",
           posted_by: user.id,
           visibility: formData.visibility as 'internal' | 'external',
           is_published: formData.is_published
         }]);
+
 
 
       if (error) {
@@ -171,7 +184,6 @@ const RecruiterDashboard = () => {
     setEditingJob(job);
     setFormData({
       title: job.title,
-      company: job.company,
       description: job.description,
       location: job.location,
       salary: job.salary || '',
@@ -202,7 +214,6 @@ const RecruiterDashboard = () => {
     setEditingJob(null);
     setFormData({
       title: '',
-      company: '',
       description: '',
       location: '',
       salary: '',

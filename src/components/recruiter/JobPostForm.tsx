@@ -12,7 +12,6 @@ import { Sparkles, Loader2, Link, AlertCircle, Globe, Linkedin, Send } from 'luc
 
 interface JobFormData {
   title: string;
-  company: string;
   description: string;
   location: string;
   salary: string;
@@ -82,10 +81,6 @@ export const JobPostForm = ({
       if (extracted.job_title) {
         newFormData.title = extracted.job_title;
         filledFields.add('title');
-      }
-      if (extracted.company_name) {
-        newFormData.company = extracted.company_name;
-        filledFields.add('company');
       }
       if (extracted.location) {
         newFormData.location = extracted.location;
@@ -255,17 +250,7 @@ export const JobPostForm = ({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="company">Company Name *</Label>
-                <Input
-                  id="company"
-                  required
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  placeholder="e.g. Tech Corp"
-                  className={getFieldClassName('company')}
-                />
-              </div>
+
 
               <div className="space-y-2">
                 <Label htmlFor="location">Location *</Label>
@@ -381,7 +366,7 @@ export const JobPostForm = ({
           </form>
 
           <div className="sticky top-6">
-            <JobChannelSimulator job={formData} />
+            <JobChannelSimulator job={{ ...formData, company: "Your Company" }} />
           </div>
         </div>
       </CardContent>

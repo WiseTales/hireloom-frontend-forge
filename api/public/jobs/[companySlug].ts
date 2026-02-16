@@ -1,9 +1,34 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(req: any, res: any) {
+// Minimal types to avoid 'any'
+interface VercelRequest {
+  method: string;
+  query: {
+    companySlug?: string;
+  };
+}
+
+interface VercelResponse {
+  status: (code: number) => VercelResponse;
+  json: (data: unknown) => VercelResponse;
+  end: () => void;
+}
+
+/**
+ * Public Jobs API Route
+ * Path: /api/public/jobs/[companySlug]
+ */
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS check
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  const { companySlug } = req.query;
+
+  if (!companySlug) {
+    return res.status(400).json({ error: "Company slug is required" });
   }
 
   try {
@@ -11,27 +36,38 @@ export default async function handler(req: any, res: any) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error("CRITICAL: Supabase environment variables missing");
-      return res.status(200).json([]);
+      console.error("Supabase environment variables missing");
+      return res.status(500).json({ error: "Internal server error" });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // TEMPORARY: Remove all filtering to confirm DB contains data
+    // 1. Find company by slug
+    const { data: company, error: companyError } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("slug", companySlug)
+      .single();
+
+    if (companyError || !company) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    // 2. Fetch jobs by companyId and status
     const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
-      .select("*")
+      .select("id, title, location, type, description")
+      .eq("company_id", company.id)
+      .eq("status", "published")
       .order("created_at", { ascending: false });
-
-    console.log("DEBUG: All Jobs in DB:", jobs);
 
     if (jobsError) {
       console.error("Database error:", jobsError);
       return res.status(200).json([]);
     }
 
-    // Map to requested schema
-    const response = (jobs || []).map((j: any) => ({
+    // 3. Map to requested schema
+    const response = (jobs || []).map((j) => ({
       id: j.id,
       title: j.title,
       location: j.location,
@@ -39,15 +75,12 @@ export default async function handler(req: any, res: any) {
       shortDescription: j.description && j.description.length > 200
         ? j.description.substring(0, 200) + "..."
         : (j.description || ""),
-      // Adding extra debug info to see what's in the DB
-      _debug_company_slug: j.company_slug,
-      _debug_status: j.status
     }));
 
     return res.status(200).json(response);
 
   } catch (err) {
-    console.error("Global API Error:", err);
+    console.error("Global API Error caught in handler:", err);
     return res.status(200).json([]);
   }
 }
