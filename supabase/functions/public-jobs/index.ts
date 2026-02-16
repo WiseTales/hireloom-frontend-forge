@@ -7,55 +7,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-/**
- * Public Jobs Edge Function
- * Logic: Fetch by company_slug and status directly.
- */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const url = new URL(req.url);
-    const pathParts = url.pathname.split('/').filter(Boolean);
-
-    let companySlug = url.searchParams.get("companySlug");
-
-    if (!companySlug) {
-      // Logic for path: .../public-jobs/[companySlug]
-      const publicJobsIndex = pathParts.indexOf('public-jobs');
-      if (publicJobsIndex !== -1 && pathParts.length > publicJobsIndex + 1) {
-        companySlug = pathParts[publicJobsIndex + 1];
-      } else {
-        const lastPart = pathParts[pathParts.length - 1];
-        if (lastPart && lastPart !== 'public-jobs') {
-          companySlug = lastPart;
-        }
-      }
-    }
-
-    if (!companySlug) {
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Direct fetch as requested
+    // TEMPORARY: Remove all filtering for debugging
     const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
-      .select("id, title, location, type, description")
-      .eq("company_slug", companySlug)
-      .eq("status", "published")
+      .select("*")
       .order("created_at", { ascending: false });
 
-    console.log("Fetched jobs:", jobs);
+    console.log("DEBUG: All Jobs in DB (Edge Function):", jobs);
 
     if (jobsError) {
       console.error("Database error:", jobsError);
@@ -73,6 +42,8 @@ Deno.serve(async (req) => {
       shortDescription: j.description && j.description.length > 200
         ? j.description.substring(0, 200) + "..."
         : (j.description || ""),
+      _debug_company_slug: j.company_slug,
+      _debug_status: j.status
     }));
 
     return new Response(JSON.stringify(response), {
