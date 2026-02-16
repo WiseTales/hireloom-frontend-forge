@@ -1,17 +1,33 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+interface JobsRequest {
+  method: string;
+  headers: { authorization?: string };
+  body: {
+    title: string;
+    location: string;
+    description: string;
+    salary: string;
+    jobType: string;
+    category: string;
+  };
+}
+
+interface JobsResponse {
+  status: (code: number) => JobsResponse;
+  json: (data: unknown) => JobsResponse;
+}
+
 /**
  * POST /api/jobs
  * Handles job creation for HR users.
- * Translates NextAuth patterns to Supabase architecture.
  */
-export default async function handler(req: any, res: any) {
+export default async function handler(req: JobsRequest, res: JobsResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // 1. Get auth token from headers
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).json({ error: "Missing authorization header" });
@@ -30,14 +46,12 @@ export default async function handler(req: any, res: any) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // 2. Verify User
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       return res.status(401).json({ error: "Unauthorized - invalid token" });
     }
 
-    // 3. Get companyId from profile (Equivalent to session.user.companyId)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('company_id')
@@ -45,12 +59,13 @@ export default async function handler(req: any, res: any) {
       .single();
 
     if (profileError || !profile?.company_id) {
-      return res.status(401).json({ error: "Unauthorized - no company found for this user" });
+      return res.status(401).json({
+        error: "Unauthorized – user not linked to any company"
+      });
     }
 
     const { title, location, description, salary, jobType, category } = req.body;
 
-    // 4. Create Job
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .insert([{
@@ -58,7 +73,7 @@ export default async function handler(req: any, res: any) {
         location,
         description,
         salary,
-        type: jobType, // mapping jobType to 'type' column in Supabase
+        type: jobType,
         category,
         status: "published",
         company_id: profile.company_id,

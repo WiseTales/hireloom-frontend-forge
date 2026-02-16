@@ -136,6 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: {
           full_name: name,
           role: role,
+          company_slug: 'nexacore', // Hardcoded as requested for demo
         },
       },
     });
