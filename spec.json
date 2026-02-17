@@ -1,0 +1,33 @@
+{
+  "version": "3.0.0",
+  "metadata": {
+    "project_name": "HireLoom Path-Based Multi-Tenant",
+    "description": "Refactored to support dynamic path-based routing for company career portals.",
+    "stack": {
+      "framework": "Next.js 15 (App Router)",
+      "deployment": "Vercel / Standard Node",
+      "routing": "Dynamic Router ([company])"
+    }
+  },
+  "constitution": {
+    "principles": [
+      "Path-Based Routing: Multi-tenancy is handled via dynamic segments (/careers/[company]).",
+      "Zero DNS dependencies: Works on any standard host without wildcard DNS.",
+      "Simplified Logic: Focused on MVP dynamic rendering."
+    ]
+  },
+  "repository_structure": {
+    "directories": [
+      {
+        "path": "app/careers/[company]",
+        "content": "Dynamic route for rendering tenant-specific career pages."
+      }
+    ]
+  },
+  "route_logic": {
+    "pattern": "/careers/:company",
+    "access": "params.company"
+  }
+}
+
+
