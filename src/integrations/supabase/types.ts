@@ -216,6 +216,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          career_site_url: string | null
           company_size: string | null
           created_at: string | null
           created_by: string | null
@@ -229,6 +230,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          career_site_url?: string | null
           company_size?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          career_site_url?: string | null
           company_size?: string | null
           created_at?: string | null
           created_by?: string | null
