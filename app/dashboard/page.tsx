@@ -56,7 +56,7 @@ export default async function DashboardPage() {
               <h2 className="text-xl font-semibold text-slate-900 mb-6">
                 Post New Job
               </h2>
-              <JobPostingForm companyId={profile.company_id} />
+              <JobPostingForm companyId={profile.company_id} userId={user.id} companyName={profile.companies?.name || ''} />
             </div>
           </div>
 
