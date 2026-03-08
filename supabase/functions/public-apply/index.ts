@@ -26,6 +26,8 @@ Deno.serve(async (req) => {
     phone?: string;
     resume_url: string;
     cover_letter?: string;
+    linkedin_url?: string;
+    portfolio_url?: string;
   };
 
   try {
@@ -37,15 +39,13 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Validate required fields
   if (!body.job_id || !body.company_slug || !body.full_name || !body.email || !body.resume_url) {
     return new Response(
-      JSON.stringify({ error: "Missing required fields: job_id, company_slug, full_name, email, resume_url" }),
+      JSON.stringify({ error: "Missing required fields" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(body.email)) {
     return new Response(
@@ -59,7 +59,6 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  // Validate company exists
   const { data: company, error: companyError } = await supabase
     .from("companies")
     .select("id")
@@ -73,23 +72,21 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Validate job exists and belongs to company
   const { data: job, error: jobError } = await supabase
     .from("jobs")
-    .select("id, company_id, is_published")
+    .select("id, company_id, status")
     .eq("id", body.job_id)
     .eq("company_id", company.id)
-    .eq("is_published", true)
+    .eq("status", "published")
     .maybeSingle();
 
   if (jobError || !job) {
     return new Response(
-      JSON.stringify({ error: "Job not found or not published for this company" }),
+      JSON.stringify({ error: "Job not found or not published" }),
       { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Insert application into public_applications table
   const { data: application, error: insertError } = await supabase
     .from("public_applications")
     .insert({
@@ -99,13 +96,16 @@ Deno.serve(async (req) => {
       phone: body.phone || null,
       resume_url: body.resume_url,
       cover_letter: body.cover_letter || null,
-      source: "external_api",
-      status: "pending",
+      linkedin_url: body.linkedin_url || null,
+      portfolio_url: body.portfolio_url || null,
+      source: "external_careers",
+      status: "new",
     })
     .select("id")
     .single();
 
   if (insertError) {
+    console.error("Insert error:", insertError);
     return new Response(
       JSON.stringify({ error: "Failed to submit application" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -113,11 +113,7 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({
-      success: true,
-      message: "Application submitted successfully",
-      application_id: application.id,
-    }),
+    JSON.stringify({ success: true, message: "Application submitted successfully", application_id: application.id }),
     { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
