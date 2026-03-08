@@ -248,14 +248,6 @@ export default function CareersPage() {
                       className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Resume *</label>
-                    <label className="flex items-center gap-2 px-3 py-3 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
-                      <Upload className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{resumeFile ? resumeFile.name : 'Click to upload resume (PDF, DOC)'}</span>
-                      <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setResumeFile(e.target.files?.[0] || null)} />
-                    </label>
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-foreground mb-1">Cover Letter</label>
                     <textarea value={appForm.cover_letter} onChange={(e) => setAppForm({ ...appForm, cover_letter: e.target.value })} rows={4}
                       className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm resize-none" placeholder="Tell us why you're interested..." />
