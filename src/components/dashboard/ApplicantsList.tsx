@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, FileText, ChevronDown, ChevronUp, Briefcase as BriefcaseIcon, Sparkles, Download, Eye, BarChart3, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Users, ChevronDown, ChevronUp, Briefcase as BriefcaseIcon, Sparkles, Download, Eye, BarChart3, ArrowUpDown, Loader2 } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -75,26 +75,9 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [atsScores, setAtsScores] = useState<Record<string, MatchAnalysis>>({});
   const [atsLoading, setAtsLoading] = useState<Record<string, boolean>>({});
-  const [bulkLoading, setBulkLoading] = useState<Record<string, boolean>>({});
   const [expandedAnalysis, setExpandedAnalysis] = useState<Record<string, boolean>>({});
   const [sortByScore, setSortByScore] = useState<Record<string, boolean>>({});
-
-  const getApplicationsForJob = (jobId: string) => {
-    const jobApps = applications.filter(a => a.job_id === jobId);
-    if (sortByScore[jobId]) {
-      return [...jobApps].sort((a, b) => {
-        const scoreA = atsScores[a.id]?.match_score ?? -1;
-        const scoreB = atsScores[b.id]?.match_score ?? -1;
-        return scoreB - scoreA;
-      });
-    }
-    return jobApps;
-  };
-
-  const handleStatusChange = async (appId: string, newStatus: string) => {
-    await (supabase.from('public_applications') as any).update({ status: newStatus.toLowerCase() }).eq('id', appId);
-    onRefresh();
-  };
+  const scoringStarted = useRef(false);
 
   const fetchResumeBase64 = async (resumeUrl: string): Promise<string | null> => {
     try {
@@ -114,19 +97,17 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
     }
   };
 
-  const runATSCheck = async (app: PublicApplication, job: Job) => {
-    if (atsScores[app.id] || atsLoading[app.id]) return;
+  const scoreOneApp = async (app: PublicApplication, job: Job) => {
+    if (!app.resume_url || app.resume_url === 'not_provided') {
+      setAtsScores(prev => ({
+        ...prev,
+        [app.id]: { match_score: 0, summary: 'No resume provided.', strengths: [], gaps: ['Resume not uploaded'], recommendation: 'weak_match' },
+      }));
+      return;
+    }
+
     setAtsLoading(prev => ({ ...prev, [app.id]: true }));
-
     try {
-      if (!app.resume_url || app.resume_url === 'not_provided') {
-        setAtsScores(prev => ({
-          ...prev,
-          [app.id]: { match_score: 0, summary: 'No resume provided.', strengths: [], gaps: ['Resume not uploaded'], recommendation: 'weak_match' },
-        }));
-        return;
-      }
-
       const base64 = await fetchResumeBase64(app.resume_url);
       if (!base64) {
         setAtsScores(prev => ({
@@ -161,29 +142,52 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
     } catch {
       setAtsScores(prev => ({
         ...prev,
-        [app.id]: { match_score: 0, summary: 'Analysis failed. Try again later.', strengths: [], gaps: [], recommendation: 'partial_match' },
+        [app.id]: { match_score: 0, summary: 'Analysis failed.', strengths: [], gaps: [], recommendation: 'partial_match' },
       }));
     } finally {
       setAtsLoading(prev => ({ ...prev, [app.id]: false }));
     }
   };
 
-  const runBulkATS = async (job: Job) => {
-    const jobApps = applications.filter(a => a.job_id === job.id);
-    const unscored = jobApps.filter(a => !atsScores[a.id] && !atsLoading[a.id]);
-    if (unscored.length === 0) {
-      setSortByScore(prev => ({ ...prev, [job.id]: true }));
-      return;
-    }
+  // Auto-score all applications on load
+  useEffect(() => {
+    if (applications.length === 0 || scoringStarted.current) return;
+    scoringStarted.current = true;
 
-    setBulkLoading(prev => ({ ...prev, [job.id]: true }));
-    for (const app of unscored) {
-      await runATSCheck(app, job);
-      // Small delay to avoid rate limiting
-      await new Promise(r => setTimeout(r, 800));
+    const scoreAll = async () => {
+      for (const app of applications) {
+        const job = jobs.find(j => j.id === app.job_id);
+        if (!job) continue;
+        await scoreOneApp(app, job);
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      // Auto-sort by ATS score
+      const jobIds = [...new Set(applications.map(a => a.job_id))];
+      setSortByScore(prev => {
+        const next = { ...prev };
+        jobIds.forEach(id => { next[id] = true; });
+        return next;
+      });
+    };
+    scoreAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applications.length]);
+
+  const getApplicationsForJob = (jobId: string) => {
+    const jobApps = applications.filter(a => a.job_id === jobId);
+    if (sortByScore[jobId]) {
+      return [...jobApps].sort((a, b) => {
+        const scoreA = atsScores[a.id]?.match_score ?? -1;
+        const scoreB = atsScores[b.id]?.match_score ?? -1;
+        return scoreB - scoreA;
+      });
     }
-    setBulkLoading(prev => ({ ...prev, [job.id]: false }));
-    setSortByScore(prev => ({ ...prev, [job.id]: true }));
+    return jobApps;
+  };
+
+  const handleStatusChange = async (appId: string, newStatus: string) => {
+    await (supabase.from('public_applications') as any).update({ status: newStatus.toLowerCase() }).eq('id', appId);
+    onRefresh();
   };
 
   const getDisplayStatus = (status: string | null) => {
@@ -192,6 +196,7 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
   };
 
   const scoredCount = (jobId: string) => applications.filter(a => a.job_id === jobId && atsScores[a.id]).length;
+  const totalForJob = (jobId: string) => applications.filter(a => a.job_id === jobId).length;
 
   return (
     <div className="bg-card rounded-xl shadow-sm border border-border p-6">
@@ -214,6 +219,7 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
             const jobApps = getApplicationsForJob(job.id);
             const isExpanded = expandedJobId === job.id;
             const scored = scoredCount(job.id);
+            const total = totalForJob(job.id);
             return (
               <div key={job.id} className="border border-border rounded-lg overflow-hidden">
                 <button
@@ -228,9 +234,14 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    {scored > 0 && (
+                    {scored > 0 && scored < total && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Scoring {scored}/{total}
+                      </span>
+                    )}
+                    {scored > 0 && scored === total && (
                       <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                        {scored} scored
+                        ✓ All scored
                       </span>
                     )}
                     <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
@@ -242,17 +253,9 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
 
                 {isExpanded && (
                   <div className="border-t border-border">
-                    {/* Bulk ATS + Sort controls */}
-                    <div className="flex items-center gap-2 px-5 py-3 bg-muted/30 border-b border-border">
-                      <button
-                        onClick={() => runBulkATS(job)}
-                        disabled={bulkLoading[job.id]}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                      >
-                        {bulkLoading[job.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <BarChart3 className="w-3 h-3" />}
-                        {bulkLoading[job.id] ? 'Scoring...' : 'Score All & Rank'}
-                      </button>
-                      {scored > 0 && (
+                    {/* Sort toggle */}
+                    {scored > 0 && (
+                      <div className="flex items-center gap-2 px-5 py-3 bg-muted/30 border-b border-border">
                         <button
                           onClick={() => setSortByScore(prev => ({ ...prev, [job.id]: !prev[job.id] }))}
                           className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
@@ -260,21 +263,21 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
                           }`}
                         >
                           <ArrowUpDown className="w-3 h-3" />
-                          {sortByScore[job.id] ? 'Sorted by ATS' : 'Sort by ATS Score'}
+                          {sortByScore[job.id] ? 'Ranked by ATS Score' : 'Sort by ATS Score'}
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     {/* Table header */}
                     <div className="hidden md:grid grid-cols-8 gap-2 px-5 py-2 bg-muted/50 text-xs font-medium text-muted-foreground">
                       {sortByScore[job.id] && <span className="col-span-1">#</span>}
                       <span className="col-span-1">Name</span>
                       <span className="col-span-1">Email</span>
-                      <span className={sortByScore[job.id] ? 'col-span-1' : 'col-span-1'}>Resume</span>
+                      <span className="col-span-1">Resume</span>
                       <span className="col-span-1">ATS Score</span>
                       <span className="col-span-1">Date</span>
                       <span className="col-span-1">Status</span>
-                      <span className="col-span-1">Actions</span>
+                      <span className="col-span-1">Links</span>
                     </div>
 
                     {jobApps.map((app, idx) => {
@@ -328,12 +331,9 @@ export default function ApplicantsList({ jobs, applications, onRefresh }: Applic
                                   <Loader2 className="w-3 h-3 animate-spin" /> Scoring...
                                 </div>
                               ) : (
-                                <button
-                                  onClick={() => runATSCheck(app, job)}
-                                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                >
-                                  <BarChart3 className="w-3 h-3" /> Check
-                                </button>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Loader2 className="w-3 h-3 animate-spin" /> Queued
+                                </div>
                               )}
                             </div>
                             <div className="col-span-1">
