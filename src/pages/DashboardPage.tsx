@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/src/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { LogOut, Users, Briefcase as BriefcaseIcon, FileText, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Job {
