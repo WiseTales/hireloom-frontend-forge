@@ -1,0 +1,1 @@
+UPDATE public.companies SET slug = 'nexacore' WHERE name = 'ChutesAI';
