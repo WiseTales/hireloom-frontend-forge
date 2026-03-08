@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '@/src/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Clock, DollarSign, X, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
