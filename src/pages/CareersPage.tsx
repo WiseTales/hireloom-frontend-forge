@@ -79,23 +79,7 @@ export default function CareersPage() {
     setSubmitting(true);
     setSubmitError('');
 
-    let resumeUrl = '';
-
-    // Upload resume if provided
-    if (resumeFile) {
-      const fileName = `${Date.now()}_${resumeFile.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('resumes')
-        .upload(fileName, resumeFile);
-
-      if (uploadError) {
-        setSubmitError('Failed to upload resume: ' + uploadError.message);
-        setSubmitting(false);
-        return;
-      }
-      const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(uploadData.path);
-      resumeUrl = urlData.publicUrl;
-    }
+    const resumeUrl = 'not_provided';
 
     // Submit application via edge function
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
