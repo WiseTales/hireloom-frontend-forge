@@ -56,7 +56,13 @@ export default function CareersPage() {
 
       const data = await res.json();
       setCompany(data.company);
-      setJobs(data.jobs || []);
+      // Map salary_range from edge function to salary used in UI
+      const mappedJobs = (data.jobs || []).map((j: any) => ({
+        ...j,
+        salary: j.salary_range || j.salary || null,
+        type: j.job_type || j.type || '',
+      }));
+      setJobs(mappedJobs);
     } catch {
       setNotFound(true);
     }
