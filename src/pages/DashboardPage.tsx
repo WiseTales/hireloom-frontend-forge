@@ -86,10 +86,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { navigate('/login'); return; }
-      setUser(user);
-      fetchData(user.id);
+    supabase.auth.getUser().then(({ data: { user: u } }: any) => {
+      if (!u) { navigate('/login'); return; }
+      setUser(u);
+      fetchData(u.id);
     });
   }, [navigate, fetchData]);
 
