@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Clock, DollarSign, X, Upload } from 'lucide-react';
+import { MapPin, Clock, DollarSign, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CompanyData {
@@ -33,7 +32,6 @@ export default function CareersPage() {
   // Application modal
   const [applyingJob, setApplyingJob] = useState<JobData | null>(null);
   const [appForm, setAppForm] = useState({ full_name: '', email: '', phone: '', cover_letter: '' });
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -56,11 +54,15 @@ export default function CareersPage() {
 
       const data = await res.json();
       setCompany(data.company);
-      // Map salary_range from edge function to salary used in UI
       const mappedJobs = (data.jobs || []).map((j: any) => ({
-        ...j,
+        id: j.jobId || j.id,
+        title: j.title,
+        location: j.location,
         salary: j.salary_range || j.salary || null,
-        type: j.job_type || j.type || '',
+        type: j.job_type || j.employmentType || j.type || '',
+        category: j.category || '',
+        description: j.description,
+        created_at: j.postedAt || j.created_at,
       }));
       setJobs(mappedJobs);
     } catch {
@@ -75,23 +77,7 @@ export default function CareersPage() {
     setSubmitting(true);
     setSubmitError('');
 
-    let resumeUrl = '';
-
-    // Upload resume if provided
-    if (resumeFile) {
-      const fileName = `${Date.now()}_${resumeFile.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('resumes')
-        .upload(fileName, resumeFile);
-
-      if (uploadError) {
-        setSubmitError('Failed to upload resume: ' + uploadError.message);
-        setSubmitting(false);
-        return;
-      }
-      const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(uploadData.path);
-      resumeUrl = urlData.publicUrl;
-    }
+    const resumeUrl = 'not_provided';
 
     // Submit application via edge function
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -201,7 +187,7 @@ export default function CareersPage() {
                     <p className="text-foreground/80 leading-relaxed line-clamp-3">{job.description}</p>
                   </div>
                   <button
-                    onClick={() => { setApplyingJob(job); setSubmitSuccess(false); setSubmitError(''); setAppForm({ full_name: '', email: '', phone: '', cover_letter: '' }); setResumeFile(null); }}
+                    onClick={() => { setApplyingJob(job); setSubmitSuccess(false); setSubmitError(''); setAppForm({ full_name: '', email: '', phone: '', cover_letter: '' }); }}
                     className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
                   >
                     Apply Now
@@ -260,14 +246,6 @@ export default function CareersPage() {
                     <label className="block text-sm font-medium text-foreground mb-1">Phone</label>
                     <input value={appForm.phone} onChange={(e) => setAppForm({ ...appForm, phone: e.target.value })}
                       className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Resume *</label>
-                    <label className="flex items-center gap-2 px-3 py-3 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
-                      <Upload className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{resumeFile ? resumeFile.name : 'Click to upload resume (PDF, DOC)'}</span>
-                      <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setResumeFile(e.target.files?.[0] || null)} />
-                    </label>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1">Cover Letter</label>
