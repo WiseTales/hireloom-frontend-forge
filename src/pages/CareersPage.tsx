@@ -32,7 +32,6 @@ export default function CareersPage() {
   // Application modal
   const [applyingJob, setApplyingJob] = useState<JobData | null>(null);
   const [appForm, setAppForm] = useState({ full_name: '', email: '', phone: '', cover_letter: '' });
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
