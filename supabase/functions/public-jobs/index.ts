@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const companySlug = url.searchParams.get("companySlug");
+  const jobId = url.searchParams.get("jobId");
 
   if (!companySlug) {
     return new Response(
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
   // Find company by slug
@@ -47,12 +48,36 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Fetch published jobs for this company
+  // If specific jobId requested, return single job detail
+  if (jobId) {
+    const { data: job, error: jobError } = await supabase
+      .from("jobs")
+      .select("id, title, department, location, location_type, salary, type, category, experience_level, experience_required, description, responsibilities, requirements, benefits, skills_required, application_deadline, hiring_manager_name, created_at")
+      .eq("id", jobId)
+      .eq("company_id", company.id)
+      .eq("status", "published")
+      .eq("visibility", "external")
+      .maybeSingle();
+
+    if (jobError || !job) {
+      return new Response(
+        JSON.stringify({ error: "Job not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ company: { id: company.id, name: company.name, slug: company.slug, logo_url: company.logo_url, description: company.description }, job }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Fetch all published external jobs
   const { data: jobs, error: jobsError } = await supabase
     .from("jobs")
-    .select("id, title, location, salary, type, category, description, created_at")
+    .select("id, title, department, location, location_type, salary, type, category, experience_level, description, created_at")
     .eq("company_id", company.id)
-    .eq("is_published", true)
+    .eq("status", "published")
     .eq("visibility", "external")
     .order("created_at", { ascending: false });
 
@@ -63,29 +88,10 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Map to the expected response format
-  const mappedJobs = (jobs || []).map((job) => ({
-    id: job.id,
-    title: job.title,
-    location: job.location,
-    salary_range: job.salary,
-    job_type: job.type,
-    category: job.category,
-    description: job.description,
-    created_at: job.created_at,
-  }));
-
   return new Response(
     JSON.stringify({
-      company: {
-        id: company.id,
-        name: company.name,
-        slug: company.slug,
-        career_site_url: company.career_site_url,
-        logo_url: company.logo_url,
-        description: company.description,
-      },
-      jobs: mappedJobs,
+      company: { id: company.id, name: company.name, slug: company.slug, logo_url: company.logo_url, description: company.description },
+      jobs: jobs || [],
     }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );

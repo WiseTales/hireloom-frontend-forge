@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Clock, DollarSign, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Clock, DollarSign, Briefcase, Building2, Globe } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface CompanyData {
   id: string;
@@ -14,10 +14,13 @@ interface CompanyData {
 interface JobData {
   id: string;
   title: string;
+  department: string | null;
   location: string;
+  location_type: string | null;
   salary: string | null;
   type: string;
   category: string;
+  experience_level: string | null;
   description: string;
   created_at: string;
 }
@@ -29,89 +32,32 @@ export default function CareersPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  // Application modal
-  const [applyingJob, setApplyingJob] = useState<JobData | null>(null);
-  const [appForm, setAppForm] = useState({ full_name: '', email: '', phone: '', cover_letter: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-
   useEffect(() => {
     if (!companySlug) return;
-    fetchCareerData();
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/public-jobs?companySlug=${companySlug}`,
+          { headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+        );
+        if (!res.ok) { setNotFound(true); setLoading(false); return; }
+        const data = await res.json();
+        setCompany(data.company);
+        setJobs(data.jobs || []);
+      } catch {
+        setNotFound(true);
+      }
+      setLoading(false);
+    };
+    fetchData();
   }, [companySlug]);
 
-  const fetchCareerData = async () => {
-    setLoading(true);
-    try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/public-jobs?companySlug=${companySlug}`,
-        { headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
-      );
-
-      if (!res.ok) { setNotFound(true); setLoading(false); return; }
-
-      const data = await res.json();
-      setCompany(data.company);
-      const mappedJobs = (data.jobs || []).map((j: any) => ({
-        id: j.jobId || j.id,
-        title: j.title,
-        location: j.location,
-        salary: j.salary_range || j.salary || null,
-        type: j.job_type || j.employmentType || j.type || '',
-        category: j.category || '',
-        description: j.description,
-        created_at: j.postedAt || j.created_at,
-      }));
-      setJobs(mappedJobs);
-    } catch {
-      setNotFound(true);
-    }
-    setLoading(false);
-  };
-
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!applyingJob || !companySlug) return;
-    setSubmitting(true);
-    setSubmitError('');
-
-    const resumeUrl = 'not_provided';
-
-    // Submit application via edge function
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    try {
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/public-apply`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            job_id: applyingJob.id,
-            company_slug: companySlug,
-            full_name: appForm.full_name,
-            email: appForm.email,
-            phone: appForm.phone || undefined,
-            resume_url: resumeUrl || 'not_provided',
-            cover_letter: appForm.cover_letter || undefined,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const errData = await res.json();
-        setSubmitError(errData.error || 'Failed to submit application');
-      } else {
-        setSubmitSuccess(true);
-      }
-    } catch {
-      setSubmitError('Network error. Please try again.');
-    }
-    setSubmitting(false);
+  const locationTypeLabel = (lt: string | null) => {
+    if (!lt) return null;
+    const map: Record<string, string> = { onsite: 'On-site', hybrid: 'Hybrid', remote: 'Remote' };
+    return map[lt] || lt;
   };
 
   if (loading) {
@@ -148,9 +94,7 @@ export default function CareersPage() {
               <p className="text-white/80 text-lg mt-1">Career Opportunities</p>
             </div>
           </div>
-          {company?.description && (
-            <p className="text-white/70 max-w-2xl mt-4">{company.description}</p>
-          )}
+          {company?.description && <p className="text-white/70 max-w-2xl mt-4">{company.description}</p>}
         </div>
       </div>
 
@@ -173,96 +117,49 @@ export default function CareersPage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-card rounded-xl shadow-sm border border-border p-8 hover:shadow-md hover:border-primary/20 transition-all"
               >
-                <div className="flex items-start justify-between gap-6">
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-heading font-semibold text-foreground mb-3">{job.title}</h2>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
-                      <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{job.location}</span>
-                      {job.type && <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{job.type}</span>}
-                      {job.salary && <span className="flex items-center gap-1"><DollarSign className="w-4 h-4" />{job.salary}</span>}
-                      {job.category && <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">{job.category}</span>}
+                <Link
+                  to={`/careers/${companySlug}/${job.id}`}
+                  className="block bg-card rounded-xl shadow-sm border border-border p-6 hover:shadow-md hover:border-primary/20 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h2 className="text-xl font-heading font-semibold text-foreground mb-2">{job.title}</h2>
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
+                        {job.department && (
+                          <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5" />{job.department}</span>
+                        )}
+                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{job.location}</span>
+                        {job.location_type && (
+                          <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{locationTypeLabel(job.location_type)}</span>
+                        )}
+                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{job.type}</span>
+                        {job.salary && <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" />{job.salary}</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {job.experience_level && (
+                          <span className="px-2.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">{job.experience_level}</span>
+                        )}
+                        {job.category && (
+                          <span className="px-2.5 py-0.5 bg-muted text-muted-foreground rounded-full text-xs font-medium">{job.category}</span>
+                        )}
+                      </div>
+                      <p className="text-foreground/70 text-sm line-clamp-2">{job.description}</p>
                     </div>
-                    <p className="text-foreground/80 leading-relaxed line-clamp-3">{job.description}</p>
+                    <span className="px-5 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg text-sm whitespace-nowrap shrink-0">
+                      View Job
+                    </span>
                   </div>
-                  <button
-                    onClick={() => { setApplyingJob(job); setSubmitSuccess(false); setSubmitError(''); setAppForm({ full_name: '', email: '', phone: '', cover_letter: '' }); }}
-                    className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
-                  >
-                    Apply Now
-                  </button>
-                </div>
+                </Link>
               </motion.div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Powered by */}
       <footer className="py-6 border-t border-border text-center">
         <p className="text-sm text-muted-foreground">Powered by <Link to="/" className="font-semibold text-primary hover:underline">HireLoom</Link></p>
       </footer>
-
-      {/* Application Modal */}
-      <AnimatePresence>
-        {applyingJob && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-foreground/60 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-heading font-bold text-foreground">Apply for {applyingJob.title}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">{company?.name}</p>
-                </div>
-                <button onClick={() => setApplyingJob(null)} className="p-2 hover:bg-muted rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </div>
-
-              {submitSuccess ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  </div>
-                  <h3 className="text-xl font-heading font-semibold text-foreground mb-2">Application Submitted!</h3>
-                  <p className="text-muted-foreground text-sm">Thank you for applying. The hiring team will review your application.</p>
-                  <button onClick={() => setApplyingJob(null)} className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity text-sm">Close</button>
-                </div>
-              ) : (
-                <form onSubmit={handleApply} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Full Name *</label>
-                    <input value={appForm.full_name} onChange={(e) => setAppForm({ ...appForm, full_name: e.target.value })} required
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Email *</label>
-                    <input type="email" value={appForm.email} onChange={(e) => setAppForm({ ...appForm, email: e.target.value })} required
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Phone</label>
-                    <input value={appForm.phone} onChange={(e) => setAppForm({ ...appForm, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Cover Letter</label>
-                    <textarea value={appForm.cover_letter} onChange={(e) => setAppForm({ ...appForm, cover_letter: e.target.value })} rows={4}
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm resize-none" placeholder="Tell us why you're interested..." />
-                  </div>
-                  {submitError && <div className="bg-destructive/10 text-destructive px-3 py-2 rounded-lg text-sm">{submitError}</div>}
-                  <button type="submit" disabled={submitting}
-                    className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 text-sm">
-                    {submitting ? 'Submitting...' : 'Submit Application'}
-                  </button>
-                </form>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
