@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Clock, DollarSign, Building2, Globe, ArrowLeft, CheckCircle, X, Calendar, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Clock, DollarSign, Building2, Globe, ArrowLeft, CheckCircle, Calendar, User } from 'lucide-react';
+import ApplicationModal from '@/components/careers/ApplicationModal';
 
 interface JobDetail {
   id: string;
@@ -38,14 +38,7 @@ export default function JobDetailPage() {
   const [company, setCompany] = useState<CompanyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-
-  // Apply modal
   const [showApply, setShowApply] = useState(false);
-  const [appForm, setAppForm] = useState({ full_name: '', email: '', phone: '', cover_letter: '', linkedin_url: '', portfolio_url: '' });
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     if (!companySlug || !jobId) return;
@@ -76,72 +69,6 @@ export default function JobDetailPage() {
     fetchData();
   }, [companySlug, jobId]);
 
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!job || !companySlug) return;
-    setSubmitting(true);
-    setSubmitError('');
-
-    let resumeUrl = 'not_provided';
-
-    // Upload resume if provided
-    if (resumeFile) {
-      try {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const formData = new FormData();
-        formData.append('file', resumeFile);
-        const uploadRes = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/upload-resume`,
-          {
-            method: 'POST',
-            headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-            body: formData,
-          }
-        );
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          resumeUrl = uploadData.url;
-        }
-      } catch {
-        // Continue without resume
-      }
-    }
-
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    try {
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/public-apply`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            job_id: job.id,
-            company_slug: companySlug,
-            full_name: appForm.full_name,
-            email: appForm.email,
-            phone: appForm.phone || undefined,
-            resume_url: resumeUrl,
-            cover_letter: appForm.cover_letter || undefined,
-            linkedin_url: appForm.linkedin_url || undefined,
-            portfolio_url: appForm.portfolio_url || undefined,
-          }),
-        }
-      );
-      if (!res.ok) {
-        const errData = await res.json();
-        setSubmitError(errData.error || 'Failed to submit application');
-      } else {
-        setSubmitSuccess(true);
-      }
-    } catch {
-      setSubmitError('Network error. Please try again.');
-    }
-    setSubmitting(false);
-  };
-
   const locationTypeLabel = (lt: string | null) => {
     if (!lt) return null;
     const map: Record<string, string> = { onsite: 'On-site', hybrid: 'Hybrid', remote: 'Remote' };
@@ -170,8 +97,6 @@ export default function JobDetailPage() {
     );
   }
 
-  const inputClass = "w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm bg-background text-foreground";
-
   return (
     <div className="min-h-screen bg-secondary/30">
       {/* Header */}
@@ -195,13 +120,11 @@ export default function JobDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Description */}
             <section>
               <h2 className="text-xl font-heading font-semibold text-foreground mb-4">About this Role</h2>
               <p className="text-foreground/80 leading-relaxed whitespace-pre-line">{job.description}</p>
             </section>
 
-            {/* Responsibilities */}
             {job.responsibilities && job.responsibilities.length > 0 && (
               <section>
                 <h2 className="text-xl font-heading font-semibold text-foreground mb-4">Responsibilities</h2>
@@ -216,7 +139,6 @@ export default function JobDetailPage() {
               </section>
             )}
 
-            {/* Requirements */}
             {job.requirements && job.requirements.length > 0 && (
               <section>
                 <h2 className="text-xl font-heading font-semibold text-foreground mb-4">Requirements</h2>
@@ -231,7 +153,6 @@ export default function JobDetailPage() {
               </section>
             )}
 
-            {/* Skills */}
             {job.skills_required && job.skills_required.length > 0 && (
               <section>
                 <h2 className="text-xl font-heading font-semibold text-foreground mb-4">Required Skills</h2>
@@ -243,14 +164,13 @@ export default function JobDetailPage() {
               </section>
             )}
 
-            {/* Benefits */}
             {job.benefits && job.benefits.length > 0 && (
               <section>
                 <h2 className="text-xl font-heading font-semibold text-foreground mb-4">Benefits</h2>
                 <ul className="space-y-2">
                   {job.benefits.map((b, i) => (
                     <li key={i} className="flex items-start gap-2 text-foreground/80">
-                      <CheckCircle className="w-4 h-4 text-success mt-1 shrink-0" />
+                      <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0" />
                       <span>{b}</span>
                     </li>
                   ))}
@@ -263,7 +183,7 @@ export default function JobDetailPage() {
           <div className="space-y-6">
             <div className="bg-card rounded-xl border border-border p-6 sticky top-8 space-y-4">
               <button
-                onClick={() => { setShowApply(true); setSubmitSuccess(false); setSubmitError(''); }}
+                onClick={() => setShowApply(true)}
                 className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
               >
                 Apply Now
@@ -310,75 +230,14 @@ export default function JobDetailPage() {
         <p className="text-sm text-muted-foreground">Powered by <Link to="/" className="font-semibold text-primary hover:underline">HireLoom</Link></p>
       </footer>
 
-      {/* Application Modal */}
-      <AnimatePresence>
-        {showApply && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-foreground/60 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-heading font-bold text-foreground">Apply for {job.title}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">{company?.name}</p>
-                </div>
-                <button onClick={() => setShowApply(false)} className="p-2 hover:bg-muted rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </div>
-
-              {submitSuccess ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-heading font-semibold text-foreground mb-2">Application Submitted!</h3>
-                  <p className="text-muted-foreground text-sm">Thank you for applying. The hiring team will review your application.</p>
-                  <button onClick={() => setShowApply(false)} className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity text-sm">Close</button>
-                </div>
-              ) : (
-                <form onSubmit={handleApply} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Full Name *</label>
-                    <input value={appForm.full_name} onChange={(e) => setAppForm({ ...appForm, full_name: e.target.value })} required className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Email *</label>
-                    <input type="email" value={appForm.email} onChange={(e) => setAppForm({ ...appForm, email: e.target.value })} required className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Phone</label>
-                    <input value={appForm.phone} onChange={(e) => setAppForm({ ...appForm, phone: e.target.value })} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Resume (PDF)</label>
-                    <input type="file" accept=".pdf" onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                      className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">LinkedIn URL</label>
-                    <input value={appForm.linkedin_url} onChange={(e) => setAppForm({ ...appForm, linkedin_url: e.target.value })} className={inputClass} placeholder="https://linkedin.com/in/..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Portfolio URL</label>
-                    <input value={appForm.portfolio_url} onChange={(e) => setAppForm({ ...appForm, portfolio_url: e.target.value })} className={inputClass} placeholder="https://..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Cover Letter</label>
-                    <textarea value={appForm.cover_letter} onChange={(e) => setAppForm({ ...appForm, cover_letter: e.target.value })} rows={4}
-                      className={`${inputClass} resize-none`} placeholder="Tell us why you're interested..." />
-                  </div>
-                  {submitError && <div className="bg-destructive/10 text-destructive px-3 py-2 rounded-lg text-sm">{submitError}</div>}
-                  <button type="submit" disabled={submitting}
-                    className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 text-sm">
-                    {submitting ? 'Submitting...' : 'Submit Application'}
-                  </button>
-                </form>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Application Modal with AI Match */}
+      <ApplicationModal
+        show={showApply}
+        onClose={() => setShowApply(false)}
+        job={job}
+        company={company}
+        companySlug={companySlug || ''}
+      />
     </div>
   );
 }
