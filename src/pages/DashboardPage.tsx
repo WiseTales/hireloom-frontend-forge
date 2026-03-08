@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Users, Briefcase as BriefcaseIcon, FileText, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { LogOut, Users, Briefcase as BriefcaseIcon, FileText, ExternalLink, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -41,7 +41,12 @@ export default function DashboardPage() {
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Form state
+  // Company setup
+  const [companyName, setCompanyName] = useState('');
+  const [companySetupLoading, setCompanySetupLoading] = useState(false);
+  const [companySetupError, setCompanySetupError] = useState('');
+
+  // Job form
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -71,7 +76,6 @@ export default function DashboardPage() {
       const fetchedJobs = (jobsData as Job[]) || [];
       setJobs(fetchedJobs);
 
-      // Fetch applications for all company jobs
       if (fetchedJobs.length > 0) {
         const jobIds = fetchedJobs.map(j => j.id);
         const { data: appsData } = await supabase
@@ -92,6 +96,52 @@ export default function DashboardPage() {
       fetchData(u.id);
     });
   }, [navigate, fetchData]);
+
+  const slugify = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  const handleCompanySetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !companyName.trim()) return;
+    setCompanySetupLoading(true);
+    setCompanySetupError('');
+
+    const slug = slugify(companyName.trim());
+
+    // Check if slug already taken
+    const { data: existing } = await supabase.from('companies').select('id').eq('slug', slug).maybeSingle();
+    if (existing) {
+      setCompanySetupError(`A company with URL "${slug}" already exists. Try a different name.`);
+      setCompanySetupLoading(false);
+      return;
+    }
+
+    // Create company
+    const { data: newCompany, error: companyErr } = await supabase
+      .from('companies')
+      .insert({ name: companyName.trim(), slug, created_by: user.id })
+      .select('id, name, slug')
+      .single();
+
+    if (companyErr || !newCompany) {
+      setCompanySetupError(companyErr?.message || 'Failed to create company');
+      setCompanySetupLoading(false);
+      return;
+    }
+
+    // Link user to company as super_admin
+    const { error: linkErr } = await supabase
+      .from('company_users')
+      .insert({ company_id: newCompany.id, user_id: user.id, role: 'super_admin' });
+
+    if (linkErr) {
+      setCompanySetupError(linkErr.message);
+      setCompanySetupLoading(false);
+      return;
+    }
+
+    setCompanyInfo(newCompany);
+    setCompanySetupLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent, publish: boolean) => {
     e.preventDefault();
@@ -139,6 +189,55 @@ export default function DashboardPage() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
 
+  // Company setup screen
+  if (!companyInfo) {
+    return (
+      <div className="min-h-screen bg-secondary/50 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="bg-card rounded-2xl shadow-xl border border-border p-8">
+            <div className="flex items-center justify-center w-14 h-14 bg-primary/10 rounded-xl mx-auto mb-6">
+              <Building2 className="w-7 h-7 text-primary" />
+            </div>
+            <h1 className="text-2xl font-heading font-bold text-foreground text-center mb-2">Set Up Your Company</h1>
+            <p className="text-sm text-muted-foreground text-center mb-8">
+              Enter your company name. This will create your public careers page.
+            </p>
+            <form onSubmit={handleCompanySetup} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Company Name</label>
+                <input
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
+                  placeholder="e.g. Nexacore, Microsoft, Acme Inc"
+                />
+              </div>
+              {companyName.trim() && (
+                <p className="text-xs text-muted-foreground">
+                  Your career page URL: <span className="font-mono text-primary">/careers/{slugify(companyName.trim())}</span>
+                </p>
+              )}
+              {companySetupError && (
+                <div className="bg-destructive/10 text-destructive px-3 py-2 rounded-lg text-sm">{companySetupError}</div>
+              )}
+              <button
+                type="submit"
+                disabled={companySetupLoading}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+              >
+                {companySetupLoading ? 'Creating...' : 'Create Company & Continue'}
+              </button>
+            </form>
+            <button onClick={handleLogout} className="w-full mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-secondary/50">
       {/* Nav */}
@@ -146,7 +245,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-heading font-bold text-foreground">HR Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">{companyInfo?.name || 'No company linked'}</p>
+            <p className="text-sm text-muted-foreground mt-1">{companyInfo.name}</p>
           </div>
           <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
             <LogOut className="w-4 h-4" /> Sign Out
@@ -221,6 +320,21 @@ export default function DashboardPage() {
 
         {/* Right: Tabs */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Career page link */}
+          <div className="bg-foreground text-primary-foreground rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-heading font-semibold mb-2">Your Public Career Page</h3>
+            <p className="text-sm opacity-80 mb-4">Share this link with candidates:</p>
+            <div className="flex items-center gap-3">
+              <code className="flex-1 bg-foreground/50 px-4 py-3 rounded-lg text-sm font-mono overflow-x-auto">
+                {`${window.location.origin}/careers/${companyInfo.slug}`}
+              </code>
+              <a href={`/careers/${companyInfo.slug}`} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-3 bg-primary-foreground text-foreground rounded-lg font-medium hover:opacity-90 transition-opacity whitespace-nowrap text-sm">
+                <ExternalLink className="w-4 h-4" /> View
+              </a>
+            </div>
+          </div>
+
           {/* Tab Switcher */}
           <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
             <button onClick={() => setActiveTab('jobs')}
@@ -378,23 +492,6 @@ export default function DashboardPage() {
                   })}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Career page link */}
-          {companyInfo?.slug && (
-            <div className="bg-foreground text-primary-foreground rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-heading font-semibold mb-2">Your Public Career Page</h3>
-              <p className="text-sm opacity-80 mb-4">Share this link with candidates:</p>
-              <div className="flex items-center gap-3">
-                <code className="flex-1 bg-foreground/50 px-4 py-3 rounded-lg text-sm font-mono">
-                  {`${window.location.origin}/careers/${companyInfo.slug}`}
-                </code>
-                <a href={`/careers/${companyInfo.slug}`} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-3 bg-primary-foreground text-foreground rounded-lg font-medium hover:opacity-90 transition-opacity whitespace-nowrap text-sm">
-                  <ExternalLink className="w-4 h-4" /> View Page
-                </a>
-              </div>
             </div>
           )}
         </div>
