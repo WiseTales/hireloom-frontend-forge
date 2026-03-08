@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, FileText, ChevronDown, ChevronUp, Briefcase as BriefcaseIcon, Sparkles, Download, Eye, BarChart3, ArrowUpDown, Loader2 } from 'lucide-react';
 
