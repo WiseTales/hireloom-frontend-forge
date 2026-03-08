@@ -187,7 +187,7 @@ export default function CareersPage() {
                     <p className="text-foreground/80 leading-relaxed line-clamp-3">{job.description}</p>
                   </div>
                   <button
-                    onClick={() => { setApplyingJob(job); setSubmitSuccess(false); setSubmitError(''); setAppForm({ full_name: '', email: '', phone: '', cover_letter: '' }); setResumeFile(null); }}
+                    onClick={() => { setApplyingJob(job); setSubmitSuccess(false); setSubmitError(''); setAppForm({ full_name: '', email: '', phone: '', cover_letter: '' }); }}
                     className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
                   >
                     Apply Now
