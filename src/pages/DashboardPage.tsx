@@ -107,11 +107,21 @@ export default function DashboardPage() {
 
     const slug = slugify(companyName.trim());
 
-    // Check if slug already taken
-    const { data: existing } = await supabase.from('companies').select('id').eq('slug', slug).maybeSingle();
+    // Check if slug already exists — if so, join that company instead of blocking
+    const { data: existing } = await supabase.from('companies').select('id, name, slug').eq('slug', slug).maybeSingle();
     if (existing) {
-      setCompanySetupError(`A company with URL "${slug}" already exists. Try a different name.`);
+      // Link user to existing company
+      const { error: linkErr } = await supabase
+        .from('company_users')
+        .insert({ company_id: existing.id, user_id: user.id, role: 'super_admin' });
+      if (linkErr) {
+        setCompanySetupError(linkErr.message);
+        setCompanySetupLoading(false);
+        return;
+      }
+      setCompanyInfo(existing);
       setCompanySetupLoading(false);
+      fetchData(user.id);
       return;
     }
 
