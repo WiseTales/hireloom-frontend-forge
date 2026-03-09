@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2, Settings } from 'lucide-react';
+import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2 } from 'lucide-react';
 import JobPostForm from '@/components/dashboard/JobPostForm';
 import JobsList from '@/components/dashboard/JobsList';
 import ApplicantsList from '@/components/dashboard/ApplicantsList';
@@ -150,14 +150,6 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground mt-1">{companyInfo.name}</p>
           </div>
           <div className="flex items-center gap-3">
-            {userRole === 'super_admin' && (
-              <button
-                onClick={() => navigate('/team')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-              >
-                <Settings className="w-4 h-4" /> Team
-              </button>
-            )}
             <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
               <LogOut className="w-4 h-4" /> Sign Out
             </button>

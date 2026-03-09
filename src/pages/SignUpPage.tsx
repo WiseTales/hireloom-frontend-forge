@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function SignUpPage() {
+  const [fullName, setFullName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,16 +17,51 @@ export default function SignUpPage() {
     setLoading(true);
     setError('');
 
-    const { error: authError } = await supabase.auth.signUp({ email, password });
+    try {
+      // 1. Create user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
 
-    if (authError) {
-      setError(authError.message);
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Failed to create user account');
+
+      // 2. Create company
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .insert({
+          name: companyName,
+          created_by: authData.user.id,
+        })
+        .select()
+        .single();
+
+      if (companyError) throw companyError;
+
+      // 3. Link user to company
+      const { error: linkError } = await supabase
+        .from('company_users')
+        .insert({
+          user_id: authData.user.id,
+          company_id: companyData.id,
+          role: 'super_admin',
+        });
+
+      if (linkError) throw linkError;
+
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 3000);
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err.message || 'Failed to create account');
       setLoading(false);
-      return;
     }
-
-    setSuccess(true);
-    setTimeout(() => navigate('/login'), 3000);
   };
 
   return (
@@ -42,6 +79,16 @@ export default function SignUpPage() {
             </div>
           ) : (
             <form onSubmit={handleSignUp} className="space-y-6">
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-foreground mb-2">Full Name</label>
+                <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="John Doe" />
+              </div>
+              <div>
+                <label htmlFor="companyName" className="block text-sm font-medium text-foreground mb-2">Company Name</label>
+                <input id="companyName" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Acme Inc." />
+              </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">Email</label>
                 <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
