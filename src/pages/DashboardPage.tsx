@@ -26,13 +26,14 @@ export default function DashboardPage() {
   const fetchData = useCallback(async (userId: string) => {
     const { data: companyUser } = await supabase
       .from('company_users')
-      .select('company_id, companies(id, name, slug)')
+      .select('company_id, role, companies(id, name, slug)')
       .eq('user_id', userId)
       .maybeSingle();
 
     if (companyUser?.companies) {
       const comp = companyUser.companies as any;
       setCompanyInfo(comp);
+      setUserRole(companyUser.role);
 
       const { data: jobsData } = await (supabase.from('jobs') as any)
         .select('*')
