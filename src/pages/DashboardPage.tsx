@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2 } from 'lucide-react';
+import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2, Settings } from 'lucide-react';
 import JobPostForm from '@/components/dashboard/JobPostForm';
 import JobsList from '@/components/dashboard/JobsList';
 import ApplicantsList from '@/components/dashboard/ApplicantsList';
