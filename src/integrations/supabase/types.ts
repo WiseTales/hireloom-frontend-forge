@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      allowed_users: {
+        Row: {
+          added_by: string | null
+          company_id: string
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["company_role"]
+          status: string
+        }
+        Insert: {
+          added_by?: string | null
+          company_id: string
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["company_role"]
+          status?: string
+        }
+        Update: {
+          added_by?: string | null
+          company_id?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["company_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allowed_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applicants: {
         Row: {
           created_at: string | null
