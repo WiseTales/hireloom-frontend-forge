@@ -303,10 +303,10 @@ export default function TeamManagementPage() {
                         </div>
                         <div>
                           <div className="font-medium text-foreground">
-                            {member.profiles?.full_name || member.profiles?.email || 'Unknown User'}
+                            {member.profile?.full_name || member.profile?.email || 'Unknown User'}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {member.profiles?.email}
+                            {member.profile?.email}
                           </div>
                         </div>
                       </div>
