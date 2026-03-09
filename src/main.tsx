@@ -20,6 +20,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/team" element={<TeamManagementPage />} />
+        <Route path="/invite/accept" element={<InviteAcceptPage />} />
         <Route path="/careers/:companySlug" element={<CareersPage />} />
         <Route path="/careers/:companySlug/:jobId" element={<JobDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
