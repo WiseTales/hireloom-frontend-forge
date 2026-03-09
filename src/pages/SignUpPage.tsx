@@ -78,6 +78,16 @@ export default function SignUpPage() {
           ) : (
             <form onSubmit={handleSignUp} className="space-y-6">
               <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-foreground mb-2">Full Name</label>
+                <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="John Doe" />
+              </div>
+              <div>
+                <label htmlFor="companyName" className="block text-sm font-medium text-foreground mb-2">Company Name</label>
+                <input id="companyName" type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Acme Inc." />
+              </div>
+              <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">Email</label>
                 <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="your.email@company.com" />
