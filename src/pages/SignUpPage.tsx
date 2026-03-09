@@ -15,16 +15,51 @@ export default function SignUpPage() {
     setLoading(true);
     setError('');
 
-    const { error: authError } = await supabase.auth.signUp({ email, password });
+    try {
+      // 1. Create user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
 
-    if (authError) {
-      setError(authError.message);
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Failed to create user account');
+
+      // 2. Create company
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .insert({
+          name: companyName,
+          created_by: authData.user.id,
+        })
+        .select()
+        .single();
+
+      if (companyError) throw companyError;
+
+      // 3. Link user to company
+      const { error: linkError } = await supabase
+        .from('company_users')
+        .insert({
+          user_id: authData.user.id,
+          company_id: companyData.id,
+          role: 'super_admin',
+        });
+
+      if (linkError) throw linkError;
+
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 3000);
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err.message || 'Failed to create account');
       setLoading(false);
-      return;
     }
-
-    setSuccess(true);
-    setTimeout(() => navigate('/login'), 3000);
   };
 
   return (
