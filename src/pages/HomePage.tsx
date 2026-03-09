@@ -10,12 +10,12 @@ const stats = [
 ];
 
 const features = [
-  { icon: Target, title: 'Pipeline Management', desc: 'Track every candidate through Applied → Interview → Offer → Hired with a visual Kanban board.' },
-  { icon: Users, title: 'Team Collaboration', desc: 'Hiring managers and recruiters work together with feedback, scoring, and internal notes.' },
-  { icon: Briefcase, title: 'Multi-Channel Posting', desc: 'Publish jobs to your career page, LinkedIn, and more — all from one dashboard.' },
-  { icon: BarChart3, title: 'Hiring Analytics', desc: 'Track time-to-hire, pipeline conversion rates, and team performance at a glance.' },
-  { icon: Zap, title: 'AI-Powered Autofill', desc: 'Extract candidate details from resumes automatically with AI — no manual data entry.' },
-  { icon: CheckCircle, title: 'Structured Interviews', desc: 'Standardized scorecards and feedback forms so every candidate gets a fair evaluation.' },
+  { icon: Target, title: 'Visual Pipeline', desc: 'Drag-and-drop Kanban board moves candidates from Applied → Interview → Hired in seconds.' },
+  { icon: Zap, title: 'AI Resume Parser', desc: 'Gemini AI instantly extracts candidate data from resumes and LinkedIn — zero manual entry.' },
+  { icon: BarChart3, title: 'Real-Time Analytics', desc: 'Dashboard shows active jobs, total applicants, hires, and weekly trends at a glance.' },
+  { icon: Users, title: 'Multi-Tenant Secure', desc: 'Enterprise-grade RLS policies ensure each company only sees their candidates and data.' },
+  { icon: Briefcase, title: 'Public Career Pages', desc: 'Instantly generate shareable career portals with your branding and active job listings.' },
+  { icon: CheckCircle, title: 'Candidate Scoring', desc: 'AI-powered summaries and manual scoring help you identify top talent fast.' },
 ];
 
 const audiences = [
@@ -53,13 +53,13 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl md:text-7xl font-heading font-bold leading-tight mb-8"
           >
-            One Hiring System.<br />Every Candidate.<br />One Dashboard.
+            Hire 10x Faster<br />With AI-Powered ATS
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
             className="text-lg md:text-xl max-w-2xl mx-auto mb-10 opacity-90"
           >
-            HireLoom is the all-in-one applicant tracking system that helps growing teams hire faster, collaborate better, and never lose a candidate.
+            HireLoom combines Kanban pipeline management, Gemini AI resume parsing, and real-time analytics in one beautiful dashboard. Built for startups that move fast.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}
@@ -91,17 +91,17 @@ export default function HomePage() {
       <section id="features" className="py-24 bg-muted/30">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-primary tracking-widest uppercase mb-3">Features</p>
-            <h2 className="text-4xl font-heading font-bold text-foreground">Everything you need to hire right</h2>
-            <p className="mt-4 text-muted-foreground max-w-xl mx-auto">From job creation to offer letter — manage your entire hiring process in one place.</p>
+            <p className="text-sm font-semibold text-primary tracking-widest uppercase mb-3">Production-Ready Features</p>
+            <h2 className="text-4xl font-heading font-bold text-foreground">Built with enterprise-grade tech</h2>
+            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">React + TypeScript frontend, Supabase backend with RLS, Gemini AI integration, and real-time updates.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                className="bg-card p-8 rounded-2xl border border-border hover:shadow-lg transition-shadow"
+                className="bg-card p-8 rounded-2xl border border-border hover:shadow-xl hover:-translate-y-1 transition-all"
               >
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-5">
-                  <f.icon className="w-6 h-6 text-primary" />
+                <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center mb-5 shadow-lg">
+                  <f.icon className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="text-lg font-heading font-semibold text-foreground mb-2">{f.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
@@ -134,11 +134,16 @@ export default function HomePage() {
       {/* CTA */}
       <section className="py-24" style={{ background: 'linear-gradient(135deg, hsl(153 60% 28%), hsl(153 60% 42%))' }}>
         <div className="max-w-3xl mx-auto px-6 text-center text-white">
-          <h2 className="text-4xl font-heading font-bold mb-6">Ready to transform your hiring?</h2>
-          <p className="text-lg opacity-90 mb-10">Join hundreds of teams that use HireLoom to find, track, and hire the best talent.</p>
-          <Link to="/signup" className="inline-flex items-center gap-2 px-10 py-4 bg-white text-foreground rounded-xl font-semibold hover:bg-white/90 transition-colors">
-            Start Hiring Today <ArrowRight className="w-4 h-4" />
-          </Link>
+          <h2 className="text-4xl md:text-5xl font-heading font-bold mb-6">See HireLoom in Action</h2>
+          <p className="text-lg opacity-90 mb-10">Full-stack ATS demo ready for investors. AI resume parsing, real-time pipeline, and secure multi-tenant architecture — all built in 48 hours.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/signup" className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white text-foreground rounded-xl font-semibold hover:shadow-2xl transition-all">
+              Try Demo <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a href="mailto:demo@hireloom.com" className="inline-flex items-center justify-center gap-2 px-10 py-4 border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition-colors">
+              Schedule Demo
+            </a>
+          </div>
         </div>
       </section>
 

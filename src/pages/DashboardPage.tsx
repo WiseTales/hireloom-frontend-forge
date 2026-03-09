@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2 } from 'lucide-react';
+import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2, LayoutDashboard, Star } from 'lucide-react';
 import JobPostForm from '@/components/dashboard/JobPostForm';
 import JobsList from '@/components/dashboard/JobsList';
 import ApplicantsList from '@/components/dashboard/ApplicantsList';
+import CandidatePipeline from '@/components/dashboard/CandidatePipeline';
+import DashboardStats from '@/components/dashboard/DashboardStats';
 
-type Tab = 'jobs' | 'applicants';
+type Tab = 'pipeline' | 'jobs' | 'scores';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -14,7 +16,7 @@ export default function DashboardPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('jobs');
+  const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [userRole, setUserRole] = useState<string>('');
   const navigate = useNavigate();
 
@@ -157,41 +159,54 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <JobPostForm user={user} companyInfo={companyInfo} onJobCreated={() => fetchData(user.id)} />
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Stats Overview */}
+        <DashboardStats jobs={jobs} applications={applications} />
+
+        {/* Career Page Link */}
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl shadow-lg p-6">
+          <h3 className="text-lg font-heading font-semibold mb-2">🚀 Your Public Career Page</h3>
+          <p className="text-sm opacity-90 mb-4">Share this link with candidates to start receiving applications:</p>
+          <div className="flex items-center gap-3">
+            <code className="flex-1 bg-black/20 px-4 py-3 rounded-lg text-sm font-mono overflow-x-auto backdrop-blur">
+              {`${window.location.origin}/careers/${companyInfo.slug}`}
+            </code>
+            <a href={`/careers/${companyInfo.slug}`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 px-5 py-3 bg-white text-foreground rounded-lg font-semibold hover:shadow-md transition-shadow whitespace-nowrap text-sm">
+              <ExternalLink className="w-4 h-4" /> Open
+            </a>
+          </div>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          {/* Career page link */}
-          <div className="bg-foreground text-primary-foreground rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-heading font-semibold mb-2">Your Public Career Page</h3>
-            <p className="text-sm opacity-80 mb-4">Share this link with candidates:</p>
-            <div className="flex items-center gap-3">
-              <code className="flex-1 bg-foreground/50 px-4 py-3 rounded-lg text-sm font-mono overflow-x-auto">
-                {`${window.location.origin}/careers/${companyInfo.slug}`}
-              </code>
-              <a href={`/careers/${companyInfo.slug}`} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-3 bg-primary-foreground text-foreground rounded-lg font-medium hover:opacity-90 transition-opacity whitespace-nowrap text-sm">
-                <ExternalLink className="w-4 h-4" /> View
-              </a>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar - Job Post Form */}
+          <div className="lg:col-span-1">
+            <JobPostForm user={user} companyInfo={companyInfo} onJobCreated={() => fetchData(user.id)} />
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Tab Switcher */}
+            <div className="flex gap-2 bg-muted p-1.5 rounded-xl w-fit">
+              <button onClick={() => setActiveTab('pipeline')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === 'pipeline' ? 'bg-card text-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
+                <LayoutDashboard className="w-4 h-4" /> Pipeline
+              </button>
+              <button onClick={() => setActiveTab('jobs')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === 'jobs' ? 'bg-card text-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
+                <BriefcaseIcon className="w-4 h-4" /> Jobs <span className="text-xs opacity-70">({jobs.length})</span>
+              </button>
+              <button onClick={() => setActiveTab('scores')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === 'scores' ? 'bg-card text-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
+                <Star className="w-4 h-4" /> ATS Scores <span className="text-xs opacity-70">({applications.length})</span>
+              </button>
             </div>
-          </div>
 
-          {/* Tab Switcher */}
-          <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
-            <button onClick={() => setActiveTab('jobs')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'jobs' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-              <BriefcaseIcon className="w-4 h-4" /> Jobs <span className="text-xs opacity-70">({jobs.length})</span>
-            </button>
-            <button onClick={() => setActiveTab('applicants')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'applicants' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
-              <Users className="w-4 h-4" /> Applicants <span className="text-xs opacity-70">({applications.length})</span>
-            </button>
+            {/* Tab Content */}
+            {activeTab === 'pipeline' && <CandidatePipeline jobs={jobs} applications={applications} onRefresh={() => fetchData(user.id)} />}
+            {activeTab === 'jobs' && <JobsList jobs={jobs} onRefresh={() => fetchData(user.id)} />}
+            {activeTab === 'scores' && <ApplicantsList jobs={jobs} applications={applications} onRefresh={() => fetchData(user.id)} />}
           </div>
-
-          {activeTab === 'jobs' && <JobsList jobs={jobs} onRefresh={() => fetchData(user.id)} />}
-          {activeTab === 'applicants' && <ApplicantsList jobs={jobs} applications={applications} onRefresh={() => fetchData(user.id)} />}
         </div>
       </div>
     </div>
