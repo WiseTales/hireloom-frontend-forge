@@ -9,6 +9,8 @@ import DashboardPage from './pages/DashboardPage';
 import CareersPage from './pages/CareersPage';
 import JobDetailPage from './pages/JobDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
+import TeamManagementPage from './pages/TeamManagementPage';
+import InviteAcceptPage from './pages/InviteAcceptPage';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
