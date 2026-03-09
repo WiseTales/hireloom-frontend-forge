@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2 } from 'lucide-react';
+import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2, LayoutDashboard, Star } from 'lucide-react';
 import JobPostForm from '@/components/dashboard/JobPostForm';
 import JobsList from '@/components/dashboard/JobsList';
 import ApplicantsList from '@/components/dashboard/ApplicantsList';
+import CandidatePipeline from '@/components/dashboard/CandidatePipeline';
+import DashboardStats from '@/components/dashboard/DashboardStats';
 
-type Tab = 'jobs' | 'applicants';
+type Tab = 'pipeline' | 'jobs' | 'scores';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
