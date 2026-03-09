@@ -316,7 +316,7 @@ export default function TeamManagementPage() {
                         </span>
                         {member.user_id !== user.id && member.role !== 'super_admin' && (
                           <button
-                            onClick={() => handleRemoveMember(member.id, member.profiles?.email || '')}
+                            onClick={() => handleRemoveMember(member.id, member.profile?.email || '')}
                             className="text-muted-foreground hover:text-destructive transition-colors"
                             title="Remove member"
                           >
