@@ -74,11 +74,25 @@ export default function TeamManagementPage() {
     // Load team members
     const { data: members } = await supabase
       .from('company_users')
-      .select('id, user_id, role, created_at, profiles(email, full_name)')
+      .select('id, user_id, role, created_at')
       .eq('company_id', company.id)
       .order('created_at', { ascending: false });
 
-    setTeamMembers(members || []);
+    if (members) {
+      // Fetch profiles separately
+      const memberIds = members.map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', memberIds);
+
+      const membersWithProfiles = members.map(member => ({
+        ...member,
+        profile: profiles?.find(p => p.id === member.user_id),
+      }));
+
+      setTeamMembers(membersWithProfiles);
+    }
 
     // Load pending invitations
     const { data: invites } = await supabase
