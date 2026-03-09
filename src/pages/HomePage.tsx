@@ -10,12 +10,12 @@ const stats = [
 ];
 
 const features = [
-  { icon: Target, title: 'Pipeline Management', desc: 'Track every candidate through Applied → Interview → Offer → Hired with a visual Kanban board.' },
-  { icon: Users, title: 'Team Collaboration', desc: 'Hiring managers and recruiters work together with feedback, scoring, and internal notes.' },
-  { icon: Briefcase, title: 'Multi-Channel Posting', desc: 'Publish jobs to your career page, LinkedIn, and more — all from one dashboard.' },
-  { icon: BarChart3, title: 'Hiring Analytics', desc: 'Track time-to-hire, pipeline conversion rates, and team performance at a glance.' },
-  { icon: Zap, title: 'AI-Powered Autofill', desc: 'Extract candidate details from resumes automatically with AI — no manual data entry.' },
-  { icon: CheckCircle, title: 'Structured Interviews', desc: 'Standardized scorecards and feedback forms so every candidate gets a fair evaluation.' },
+  { icon: Target, title: 'Visual Pipeline', desc: 'Drag-and-drop Kanban board moves candidates from Applied → Interview → Hired in seconds.' },
+  { icon: Zap, title: 'AI Resume Parser', desc: 'Gemini AI instantly extracts candidate data from resumes and LinkedIn — zero manual entry.' },
+  { icon: BarChart3, title: 'Real-Time Analytics', desc: 'Dashboard shows active jobs, total applicants, hires, and weekly trends at a glance.' },
+  { icon: Users, title: 'Multi-Tenant Secure', desc: 'Enterprise-grade RLS policies ensure each company only sees their candidates and data.' },
+  { icon: Briefcase, title: 'Public Career Pages', desc: 'Instantly generate shareable career portals with your branding and active job listings.' },
+  { icon: CheckCircle, title: 'Candidate Scoring', desc: 'AI-powered summaries and manual scoring help you identify top talent fast.' },
 ];
 
 const audiences = [
