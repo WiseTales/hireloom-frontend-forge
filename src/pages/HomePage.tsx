@@ -53,13 +53,13 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl md:text-7xl font-heading font-bold leading-tight mb-8"
           >
-            One Hiring System.<br />Every Candidate.<br />One Dashboard.
+            Hire 10x Faster<br />With AI-Powered ATS
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
             className="text-lg md:text-xl max-w-2xl mx-auto mb-10 opacity-90"
           >
-            HireLoom is the all-in-one applicant tracking system that helps growing teams hire faster, collaborate better, and never lose a candidate.
+            HireLoom combines Kanban pipeline management, Gemini AI resume parsing, and real-time analytics in one beautiful dashboard. Built for startups that move fast.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}
