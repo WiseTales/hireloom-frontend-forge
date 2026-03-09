@@ -3,15 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Mail, UserPlus, Trash2, Shield, Users as UsersIcon } from 'lucide-react';
 
+type Profile = {
+  email: string;
+  full_name: string | null;
+};
+
 type TeamMember = {
   id: string;
   user_id: string;
   role: string;
-  created_at: string;
-  profiles?: {
-    email: string;
-    full_name: string | null;
-  };
+  created_at: string | null;
+  profile?: Profile;
 };
 
 type Invitation = {
