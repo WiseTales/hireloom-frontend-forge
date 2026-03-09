@@ -91,17 +91,17 @@ export default function HomePage() {
       <section id="features" className="py-24 bg-muted/30">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-primary tracking-widest uppercase mb-3">Features</p>
-            <h2 className="text-4xl font-heading font-bold text-foreground">Everything you need to hire right</h2>
-            <p className="mt-4 text-muted-foreground max-w-xl mx-auto">From job creation to offer letter — manage your entire hiring process in one place.</p>
+            <p className="text-sm font-semibold text-primary tracking-widest uppercase mb-3">Production-Ready Features</p>
+            <h2 className="text-4xl font-heading font-bold text-foreground">Built with enterprise-grade tech</h2>
+            <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">React + TypeScript frontend, Supabase backend with RLS, Gemini AI integration, and real-time updates.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                className="bg-card p-8 rounded-2xl border border-border hover:shadow-lg transition-shadow"
+                className="bg-card p-8 rounded-2xl border border-border hover:shadow-xl hover:-translate-y-1 transition-all"
               >
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-5">
-                  <f.icon className="w-6 h-6 text-primary" />
+                <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center mb-5 shadow-lg">
+                  <f.icon className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="text-lg font-heading font-semibold text-foreground mb-2">{f.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
