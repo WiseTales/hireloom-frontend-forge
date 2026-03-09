@@ -150,14 +150,6 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground mt-1">{companyInfo.name}</p>
           </div>
           <div className="flex items-center gap-3">
-            {userRole === 'super_admin' && (
-              <button
-                onClick={() => navigate('/team')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-              >
-                <Settings className="w-4 h-4" /> Team
-              </button>
-            )}
             <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
               <LogOut className="w-4 h-4" /> Sign Out
             </button>
