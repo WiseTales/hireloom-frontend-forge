@@ -134,11 +134,16 @@ export default function HomePage() {
       {/* CTA */}
       <section className="py-24" style={{ background: 'linear-gradient(135deg, hsl(153 60% 28%), hsl(153 60% 42%))' }}>
         <div className="max-w-3xl mx-auto px-6 text-center text-white">
-          <h2 className="text-4xl font-heading font-bold mb-6">Ready to transform your hiring?</h2>
-          <p className="text-lg opacity-90 mb-10">Join hundreds of teams that use HireLoom to find, track, and hire the best talent.</p>
-          <Link to="/signup" className="inline-flex items-center gap-2 px-10 py-4 bg-white text-foreground rounded-xl font-semibold hover:bg-white/90 transition-colors">
-            Start Hiring Today <ArrowRight className="w-4 h-4" />
-          </Link>
+          <h2 className="text-4xl md:text-5xl font-heading font-bold mb-6">See HireLoom in Action</h2>
+          <p className="text-lg opacity-90 mb-10">Full-stack ATS demo ready for investors. AI resume parsing, real-time pipeline, and secure multi-tenant architecture — all built in 48 hours.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/signup" className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white text-foreground rounded-xl font-semibold hover:shadow-2xl transition-all">
+              Try Demo <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a href="mailto:demo@hireloom.com" className="inline-flex items-center justify-center gap-2 px-10 py-4 border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition-colors">
+              Schedule Demo
+            </a>
+          </div>
         </div>
       </section>
 
