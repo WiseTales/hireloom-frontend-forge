@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('jobs');
+  const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [userRole, setUserRole] = useState<string>('');
   const navigate = useNavigate();
 
