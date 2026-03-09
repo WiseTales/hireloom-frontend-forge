@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2 } from 'lucide-react';
+import { LogOut, Users, Briefcase as BriefcaseIcon, ExternalLink, Building2, Settings } from 'lucide-react';
 import JobPostForm from '@/components/dashboard/JobPostForm';
 import JobsList from '@/components/dashboard/JobsList';
 import ApplicantsList from '@/components/dashboard/ApplicantsList';
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('jobs');
+  const [userRole, setUserRole] = useState<string>('');
   const navigate = useNavigate();
 
   // Company setup
@@ -25,13 +26,14 @@ export default function DashboardPage() {
   const fetchData = useCallback(async (userId: string) => {
     const { data: companyUser } = await supabase
       .from('company_users')
-      .select('company_id, companies(id, name, slug)')
+      .select('company_id, role, companies(id, name, slug)')
       .eq('user_id', userId)
       .maybeSingle();
 
     if (companyUser?.companies) {
       const comp = companyUser.companies as any;
       setCompanyInfo(comp);
+      setUserRole(companyUser.role);
 
       const { data: jobsData } = await (supabase.from('jobs') as any)
         .select('*')
@@ -147,9 +149,19 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-heading font-bold text-foreground">HR Dashboard</h1>
             <p className="text-sm text-muted-foreground mt-1">{companyInfo.name}</p>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
-            <LogOut className="w-4 h-4" /> Sign Out
-          </button>
+          <div className="flex items-center gap-3">
+            {userRole === 'super_admin' && (
+              <button
+                onClick={() => navigate('/team')}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+              >
+                <Settings className="w-4 h-4" /> Team
+              </button>
+            )}
+            <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </button>
+          </div>
         </div>
       </nav>
 
