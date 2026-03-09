@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('jobs');
+  const [userRole, setUserRole] = useState<string>('');
   const navigate = useNavigate();
 
   // Company setup
